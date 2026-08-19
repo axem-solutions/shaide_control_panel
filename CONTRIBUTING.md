@@ -65,6 +65,26 @@ fix(auth): reject expired sessions
 docs: clarify control panel configuration
 ```
 
+## Developer Certificate of Origin
+
+Every commit must carry a `Signed-off-by` trailer certifying that you wrote the
+contribution, or otherwise have the right to submit it under this repository's
+license, as described by the
+[Developer Certificate of Origin](https://developercertificate.org/) (DCO).
+
+With `user.name` and `user.email` configured in git, sign off automatically:
+
+```bash
+git commit -s -m "fix(app_serving): preserve node placement settings"
+```
+
+The commit's `Author` and `Signed-off-by` identities must match. If a commit is
+missing its sign-off, add it before opening the pull request:
+
+```bash
+git commit --amend -s
+```
+
 ## Validate your change
 
 Run the same checks used by pull-request CI:

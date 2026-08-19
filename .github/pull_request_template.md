@@ -48,6 +48,7 @@ Additional validation details:
 - [ ] I checked responsive behavior and keyboard accessibility where applicable.
 - [ ] I updated the documentation.
 - [ ] My commits follow the Conventional Commits specification.
+- [ ] Every commit includes a `Signed-off-by` trailer (`git commit -s`).
 
 ## Additional information
 
