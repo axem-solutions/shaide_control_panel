@@ -1,0 +1,187 @@
+@import "tailwindcss";
+
+/* Fonts are self-hosted and loaded in `src/app/layout.tsx` via `next/font/local`,
+   which publishes `--ax-font-general-sans`. See the comment there for why this
+   is not a plain `@font-face` rule. */
+
+:root {
+  /* ---- CORE NEUTRALS ---- */
+  --ax-black: #000000;
+  --ax-ink: #0e0e0e;
+  --ax-ink-2: #080808;
+  --ax-surface: #222222; /* THE hairline color */
+  --ax-surface-2: #444444;
+  --ax-line: rgba(34, 34, 34, 0.2);
+  --ax-line-strong: #222222;
+
+  /* ---- FOREGROUND TEXT ---- */
+  --ax-fg: #ffffff;
+  --ax-fg-muted: #bababa;
+  --ax-fg-dim: #8f8f8f;
+  --ax-fg-footer: #e9ebde;
+
+  /* ---- BRAND ACCENTS ---- */
+  --ax-orange: #df6803;
+  --ax-magenta: #ff0040;
+  --ax-magenta-soft: rgba(255, 0, 64, 0.35);
+
+  /* ---- SEMANTIC ---- */
+  --ax-success: #39c463;
+  --ax-info: #4fc3f7;
+
+  /* ---- OVERLAYS & CHROME ---- */
+  --ax-btn-ghost: rgba(255, 255, 255, 0.192);
+  --ax-btn-ghost-bg: rgba(255, 255, 255, 0.06);
+  --ax-tag-bg: rgba(34, 34, 34, 0.5);
+  --ax-accent-soft: rgba(223, 104, 3, 0.08);
+  --ax-accent-soft-strong: rgba(223, 104, 3, 0.2);
+  --ax-danger-soft: rgba(255, 0, 64, 0.15);
+  --ax-danger-soft-hover: rgba(255, 0, 64, 0.25);
+  --ax-row-hover: rgba(255, 255, 255, 0.03);
+  --ax-shadow-card: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
+  --ax-scrim: rgba(0, 0, 0, 0.6);
+
+  /* ---- TYPOGRAPHY ---- */
+  --ax-font-sans:
+    var(--ax-font-general-sans), ui-sans-serif, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --ax-font-mono:
+    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+  --font-sans: var(--ax-font-sans);
+  --font-mono: var(--ax-font-mono);
+
+  --fs-h1: 44px;
+  --fs-h2: 34px;
+  --fs-h3: 33px;
+  --fs-h4: 29px;
+  --fs-lead: 20px;
+  --fs-body: 16px;
+  --fs-small: 15px;
+  --fs-meta: 14px;
+  --fs-caption: 11px;
+
+  --lh-h1: 45px;
+  --lh-h2: 38.5px;
+  --lh-body: 19.2px;
+  --lh-tight: 16.8px;
+
+  --fw-regular: 400;
+  --fw-medium: 500; /* 500 is the workhorse weight */
+
+  /* ---- RADII — almost everything is squared ---- */
+  --radius-0: 0;
+  --radius-sm: 2px;
+  --radius-chrome: 4px; /* small square chrome buttons only (§3.2) */
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* ---- SPACING / LAYOUT ---- */
+  --layout-pad-x: 80px;
+  --layout-pad-y: 40px;
+  --layout-content-max: 1200px;
+  --pad-card: 40px;
+
+  /* ---- SEARCH-HIT HIGHLIGHT ---- */
+  --ax-highlight-bg: rgba(223, 104, 3, 0.3);
+  --ax-highlight-fg: var(--ax-fg);
+}
+
+@theme inline {
+  --color-background: var(--ax-black);
+  --color-foreground: var(--ax-fg);
+  --font-sans: var(--ax-font-sans);
+  --font-mono: var(--ax-font-mono);
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--ax-black);
+  color: var(--ax-fg);
+  font-family: var(--font-sans);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ==========================================================================
+   Page shell — 80px gutters with a 1200px centred column
+   ========================================================================== */
+
+.section-page-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--ax-black);
+}
+
+/* The gutter lives on <main> and the 1200px cap on the inner column, so the
+   column is a true 1200px regardless of box-sizing. */
+.section-page-main {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  padding: var(--layout-pad-y) var(--layout-pad-x);
+}
+
+.section-page-content {
+  width: 100%;
+  max-width: var(--layout-content-max);
+  margin-inline: auto;
+}
+
+.section-page-content--full {
+  max-width: none;
+  margin-inline: 0;
+}
+
+@media (max-width: 900px) {
+  :root {
+    --layout-pad-x: 24px;
+    --layout-pad-y: 32px;
+  }
+}
+
+/* ==========================================================================
+   Shared motion + scrollbars
+   ========================================================================== */
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(0.6);
+  }
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ax-surface) var(--ax-black);
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--ax-black);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--ax-surface);
+  border-radius: 0;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--ax-surface-2);
+}

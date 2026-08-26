@@ -1,0 +1,45 @@
+{
+  "name": "shaide_control_panel",
+  "version": "0.5.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "lint": "eslint",
+    "docker:build": "docker build -t control-panel:latest .",
+    "docker:run": "docker run --rm -p 3000:3000 --add-host=host.docker.internal:host-gateway --name control-panel control-panel:latest",
+    "docker:run:detached": "docker run -d --rm -p 3000:3000 --add-host=host.docker.internal:host-gateway --name control-panel control-panel:latest",
+    "docker:stop": "docker stop control-panel",
+    "release": "npx tsx scripts/release.ts"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.7",
+    "@mui/material": "^7.3.7",
+    "@mui/material-nextjs": "^7.3.7",
+    "@mui/x-date-pickers": "^8.28.4",
+    "dayjs": "^1.11.20",
+    "jszip": "^3.10.1",
+    "next": "15.5.22",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.22",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  },
+  "overrides": {
+    "next": {
+      "sharp": "^0.35.3"
+    }
+  }
+}
