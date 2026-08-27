@@ -2,6 +2,7 @@ import CollectionPage from "./CollectionPage";
 import CollectionNotFound from "./CollectionNotFound";
 import { cookies } from "next/headers";
 import { AUTH_TOKEN_COOKIE, IS_ADMIN_COOKIE } from "@/lib/session-config";
+import { isKnowledgeCenterEnabled } from "@/lib/feature-flags";
 import { redirect } from "next/navigation";
 import { Box } from "@mui/material";
 import CollectionBreadcrumb from "../CollectionBreadcrumb";
@@ -22,6 +23,9 @@ export default async function Page({ params }: PageProps) {
   const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
   if (!token) {
     redirect("/");
+  }
+  if (!isKnowledgeCenterEnabled()) {
+    redirect("/home");
   }
 
   const { collection_name } = await params;

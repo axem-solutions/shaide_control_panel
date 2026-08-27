@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { AUTH_TOKEN_COOKIE, IS_ADMIN_COOKIE } from "@/lib/session-config";
+import { isKnowledgeCenterEnabled } from "@/lib/feature-flags";
 import { redirect } from "next/navigation";
 import { Box } from "@mui/material";
 import CollectionsPage from "./CollectionsPage";
@@ -19,6 +20,9 @@ export default async function Page() {
   const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
   if (!token) {
     redirect("/");
+  }
+  if (!isKnowledgeCenterEnabled()) {
+    redirect("/home");
   }
 
   const isAdmin = cookieStore.get(IS_ADMIN_COOKIE)?.value === "true";

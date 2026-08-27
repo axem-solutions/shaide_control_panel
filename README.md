@@ -48,6 +48,12 @@ Control Panel home page — for admins and normal users alike — when the varia
 to `true` (`1`/`yes`/`on` also count). Unset or any other value hides it, so an
 installation that does not run the service never advertises it.
 
+The `/knowledge_center` routes guard on the same flag and redirect to `/home` when it is
+off, so the feature is not reachable by URL either. The guard lives in the page components
+(`src/lib/feature-flags.ts` is read from the Node runtime) rather than in `src/middleware.ts`,
+because middleware runs on the Edge runtime, where `process.env` is inlined at build time —
+the flag has to stay a deployment-time setting, not a build-time one.
+
 ## Design system
 
 The UI is a themed MUI app. Three files hold the whole visual layer — change them,
