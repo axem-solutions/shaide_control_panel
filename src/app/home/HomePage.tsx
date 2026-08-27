@@ -2,12 +2,14 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { IS_ADMIN_COOKIE } from "@/lib/session-config";
+import { isKnowledgeCenterEnabled } from "@/lib/feature-flags";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import QueryStatsIcon from "@mui/icons-material/QueryStats";
 import { Box, Typography } from "@mui/material";
 import ArrowLink from "../components/server/ui/ArrowLink";
 import CardGrid from "../components/server/ui/CardGrid";
+import EmptyState from "../components/server/ui/EmptyState";
 import PageIntro from "../components/server/ui/PageIntro";
 import Panel from "../components/server/ui/Panel";
 
@@ -70,11 +72,24 @@ function HomeTile({ tile }: { tile: Tile }) {
   );
 }
 
+function homeSubtitle(isAdmin: boolean, knowledgeCenterEnabled: boolean) {
+  if (isAdmin) {
+    return knowledgeCenterEnabled
+      ? "Manage users and knowledge collections."
+      : "Manage users and view system logs.";
+  }
+
+  return knowledgeCenterEnabled ? "Browse the collections shared with you." : undefined;
+}
+
 export default async function HomePage() {
   const isAdmin = (await cookies()).get(IS_ADMIN_COOKIE)?.value === "true";
+  const knowledgeCenterEnabled = isKnowledgeCenterEnabled();
 
-  const tiles: Tile[] = [
-    {
+  const tiles: Tile[] = [];
+
+  if (knowledgeCenterEnabled) {
+    tiles.push({
       href: "/knowledge_center",
       title: "Knowledge Center",
       description: isAdmin
@@ -82,8 +97,8 @@ export default async function HomePage() {
         : "Browse the collections shared with you and upload documents where enabled.",
       action: "Browse",
       icon: <MenuBookIcon sx={ICON_SX} />,
-    },
-  ];
+    });
+  }
 
   if (isAdmin) {
     tiles.push(
@@ -108,18 +123,21 @@ export default async function HomePage() {
     <Box>
       <PageIntro
         title="Control Panel"
-        subtitle={
-          isAdmin
-            ? "Manage users and knowledge collections."
-            : "Browse the collections shared with you."
-        }
+        subtitle={homeSubtitle(isAdmin, knowledgeCenterEnabled)}
         gutterBottom={32}
       />
-      <CardGrid>
-        {tiles.map((tile) => (
-          <HomeTile key={tile.href} tile={tile} />
-        ))}
-      </CardGrid>
+      {tiles.length > 0 ? (
+        <CardGrid>
+          {tiles.map((tile) => (
+            <HomeTile key={tile.href} tile={tile} />
+          ))}
+        </CardGrid>
+      ) : (
+        <EmptyState
+          title="Nothing available"
+          description="No control panel services are enabled for your account. Please contact your administrator."
+        />
+      )}
     </Box>
   );
 }
