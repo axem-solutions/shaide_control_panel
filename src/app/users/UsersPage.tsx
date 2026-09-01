@@ -3,11 +3,14 @@ import { getUsers } from "../../services/fetch-users";
 import { getCollections } from "../../services/fetch-collections";
 import { cookies } from "next/headers";
 import { AUTH_TOKEN_COOKIE } from "@/lib/session-config";
+import { getTrustedSession } from "@/lib/session-signature";
 import { Box, Alert } from "@mui/material";
 
 export default async function Page() {
   const data = await getUsers();
-  const adminToken = (await cookies()).get(AUTH_TOKEN_COOKIE)?.value ?? "";
+  const cookieStore = await cookies();
+  const adminToken = cookieStore.get(AUTH_TOKEN_COOKIE)?.value ?? "";
+  const currentUsername = (await getTrustedSession())?.username ?? "";
   const collectionsData = adminToken
     ? await getCollections(adminToken)
     : { collections: [], error: "Missing admin token for collection membership lookup." };
@@ -22,7 +25,7 @@ export default async function Page() {
 
   const users = data.users.map((user) => ({
     ...user,
-    isCurrentAdmin: adminToken !== "" && user.auth_token === adminToken,
+    isCurrentAdmin: currentUsername !== "" && user.username === currentUsername,
     collectionNames: membershipsByUserId.get(user.id) ?? [],
   }));
 

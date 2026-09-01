@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { cookies } from "next/headers";
-import { IS_ADMIN_COOKIE } from "@/lib/session-config";
+import { isAdminSession } from "@/lib/session-signature";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import QueryStatsIcon from "@mui/icons-material/QueryStats";
@@ -71,7 +70,7 @@ function HomeTile({ tile }: { tile: Tile }) {
 }
 
 export default async function HomePage() {
-  const isAdmin = (await cookies()).get(IS_ADMIN_COOKIE)?.value === "true";
+  const isAdmin = await isAdminSession();
 
   const tiles: Tile[] = [
     {

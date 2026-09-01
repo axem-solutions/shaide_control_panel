@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { AUTH_TOKEN_COOKIE, IS_ADMIN_COOKIE } from "@/lib/session-config";
+import { AUTH_TOKEN_COOKIE } from "@/lib/session-config";
+import { getTrustedSession } from "@/lib/session-signature";
 import { redirect } from "next/navigation";
 import { Box } from "@mui/material";
 import CollectionsPage from "./CollectionsPage";
@@ -17,11 +18,12 @@ export const metadata: Metadata = { title: "Knowledge Center" };
 export default async function Page() {
   const cookieStore = await cookies();
   const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
+  const username = (await getTrustedSession())?.username;
   if (!token) {
     redirect("/");
   }
 
-  const isAdmin = cookieStore.get(IS_ADMIN_COOKIE)?.value === "true";
+  const isAdmin = (await getTrustedSession())?.role === "admin";
   const [collectionsResponse, usersResponse] = await Promise.all([
     getCollections(token),
     isAdmin ? getUsers() : Promise.resolve({ users: [], error: undefined }),
@@ -51,7 +53,7 @@ export default async function Page() {
                 isAdmin={isAdmin}
                 users={users}
                 usersError={usersError}
-                currentAuthToken={token}
+                currentUsername={username}
                 existingCollectionNames={collectionNames}
                 fallbackEmbeddingModelId={fallbackEmbeddingModelId}
               />
@@ -72,7 +74,7 @@ export default async function Page() {
                 isAdmin={isAdmin}
                 users={users}
                 usersError={usersError}
-                currentAuthToken={token}
+                currentUsername={username}
                 existingCollectionNames={collectionNames}
                 fallbackEmbeddingModelId={fallbackEmbeddingModelId}
               />

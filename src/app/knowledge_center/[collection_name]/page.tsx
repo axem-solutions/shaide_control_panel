@@ -1,7 +1,8 @@
 import CollectionPage from "./CollectionPage";
 import CollectionNotFound from "./CollectionNotFound";
 import { cookies } from "next/headers";
-import { AUTH_TOKEN_COOKIE, IS_ADMIN_COOKIE } from "@/lib/session-config";
+import { AUTH_TOKEN_COOKIE } from "@/lib/session-config";
+import { getTrustedSession } from "@/lib/session-signature";
 import { redirect } from "next/navigation";
 import { Box } from "@mui/material";
 import CollectionBreadcrumb from "../CollectionBreadcrumb";
@@ -20,13 +21,14 @@ type PageProps = {
 export default async function Page({ params }: PageProps) {
   const cookieStore = await cookies();
   const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
+  const username = (await getTrustedSession())?.username;
   if (!token) {
     redirect("/");
   }
 
   const { collection_name } = await params;
   const name = decodeURIComponent(collection_name);
-  const isAdmin = cookieStore.get(IS_ADMIN_COOKIE)?.value === "true";
+  const isAdmin = (await getTrustedSession())?.role === "admin";
   const [collectionsResponse, usersResponse] = await Promise.all([
     getCollections(token ?? ""),
     isAdmin ? getUsers() : Promise.resolve({ users: [], error: undefined }),
@@ -62,7 +64,7 @@ export default async function Page({ params }: PageProps) {
           isAdmin={isAdmin}
           users={users}
           usersError={usersError}
-          currentAuthToken={token}
+          currentUsername={username}
           existingCollectionNames={collections.map((c) => c.name)}
         />
       </Box>
