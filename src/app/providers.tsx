@@ -5,13 +5,13 @@ import { AppRouterCacheProvider } from "@mui/material-nextjs/v14-appRouter";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { useEffect } from "react";
-import { registerSessionActivityTouch } from "@/lib/session-activity";
+import { registerSessionExpiryRedirect } from "@/lib/session-activity";
 import theme from "./theme";
 
 export default function Providers({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "/";
   useEffect(() => {
-    return registerSessionActivityTouch(pathname);
+    return registerSessionExpiryRedirect(pathname);
   }, [pathname]);
 
   return (

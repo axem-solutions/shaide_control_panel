@@ -9,6 +9,7 @@ type BackendRequestOptions = {
   body?: unknown;
   headers?: HeadersInit;
   missingAuthError?: string;
+  allowUnauthenticated?: boolean;
 };
 
 type BackendSuccess<T> = {
@@ -35,9 +36,10 @@ export async function requestBackendJson<T = unknown>(
     body,
     headers,
     missingAuthError = "Missing auth token.",
+    allowUnauthenticated = false,
   } = options;
 
-  if (!authToken) {
+  if (!authToken && !allowUnauthenticated) {
     return { ok: false, error: missingAuthError };
   }
 
@@ -45,7 +47,9 @@ export async function requestBackendJson<T = unknown>(
 
   try {
     const mergedHeaders = new Headers(headers);
-    mergedHeaders.set("Authorization", `Bearer ${authToken}`);
+    if (authToken) {
+      mergedHeaders.set("Authorization", `Bearer ${authToken}`);
+    }
 
     const hasBody = body !== undefined;
     if (hasBody && !mergedHeaders.has("Content-Type")) {

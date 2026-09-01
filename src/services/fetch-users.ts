@@ -11,11 +11,8 @@ export const dynamic = 'force-dynamic';
 
 export type UsersResponse = { users: User[]; error?: string };
 
-type License = { auth_token: string; expires_at: string };
-
 type RawUsersResponse = {
   users: User[];
-  licenses?: License[];
   error?: string;
 };
 
@@ -35,14 +32,5 @@ export async function getUsers(): Promise<UsersResponse> {
     return { users: [], error: "Backend returned invalid response." };
   }
 
-  const expiresAtByAuthToken = new Map(
-    (result.data.licenses ?? []).map((license) => [license.auth_token, license.expires_at]),
-  );
-
-  return {
-    users: result.data.users.map((user) => ({
-      ...user,
-      expires_at: expiresAtByAuthToken.get(user.auth_token) ?? user.expires_at,
-    })),
-  };
+  return { users: result.data.users };
 }

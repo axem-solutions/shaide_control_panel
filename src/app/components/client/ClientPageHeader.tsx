@@ -28,6 +28,7 @@ export type PageHeaderProps = {
   showLogout?: boolean;
   showRole?: boolean;
   isAdmin?: boolean;
+  username?: string;
   disableLogoLink?: boolean;
   licenseExpiresAt?: string;
 };
@@ -38,6 +39,7 @@ export default function PageHeader({
   showLogout = true,
   showRole = true,
   isAdmin = false,
+  username,
   disableLogoLink = false,
   licenseExpiresAt,
 }: PageHeaderProps) {
@@ -123,7 +125,9 @@ export default function PageHeader({
             }}
           >
             <StatusDot tone={isAdmin ? "admin" : "user"} />
-            <MonoLabel spacing="wide">{isAdmin ? "Admin" : "User"}</MonoLabel>
+            <MonoLabel spacing="wide">
+              {username || (isAdmin ? "Admin" : "User")}
+            </MonoLabel>
           </Box>
         )}
 

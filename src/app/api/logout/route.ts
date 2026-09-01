@@ -1,15 +1,10 @@
 import { NextResponse } from "next/server";
-import {
-  AUTH_TOKEN_COOKIE,
-  IS_ADMIN_COOKIE,
-  SESSION_TOUCH_AT_COOKIE,
-  getSecureCookieFlag,
-} from "@/lib/session-config";
+import { ALL_SESSION_COOKIES, getSecureCookieFlag } from "@/lib/session-config";
 
 export async function POST(request: Request) {
   const response = NextResponse.json({ ok: true });
 
-  for (const name of [AUTH_TOKEN_COOKIE, IS_ADMIN_COOKIE, SESSION_TOUCH_AT_COOKIE]) {
+  for (const name of ALL_SESSION_COOKIES) {
     response.cookies.set(name, "", {
       httpOnly: true,
       sameSite: "lax",

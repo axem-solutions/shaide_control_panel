@@ -38,11 +38,11 @@ async function uploadLicenseFile(file: File): Promise<FileUploadResult> {
   return { ok: true };
 }
 
-type SortBy = "auth_token" | "collections" | "expires_at";
+type SortBy = "username" | "collections" | "expires_at";
 
 export default function UsersTablePanel({ users }: { users: UserRow[] }) {
   const router = useRouter();
-  const [sortBy, setSortBy] = useState<SortBy>("auth_token");
+  const [sortBy, setSortBy] = useState<SortBy>("username");
   const [search, setSearch] = useState("");
   const [showAdmin, setShowAdmin] = useState(true);
 
@@ -53,7 +53,7 @@ export default function UsersTablePanel({ users }: { users: UserRow[] }) {
       if (!showAdmin && user.isCurrentAdmin) {
         return false;
       }
-      return includesNormalized(user.auth_token, normalizedSearch);
+      return includesNormalized(user.username, normalizedSearch);
     });
 
     return [...filtered].sort((a, b) => {
@@ -73,13 +73,13 @@ export default function UsersTablePanel({ users }: { users: UserRow[] }) {
         }
         return Date.parse(a.expires_at) - Date.parse(b.expires_at);
       }
-      return sortStringsAsc(a.auth_token, b.auth_token);
+      return sortStringsAsc(a.username, b.username);
     });
   }, [users, search, showAdmin, sortBy]);
 
   return (
     <Box>
-      <PageIntro title="Users" subtitle="Manage license keys and collection memberships." />
+      <PageIntro title="Users" subtitle="Manage users and collection memberships." />
 
       <Box
         sx={{
@@ -93,8 +93,8 @@ export default function UsersTablePanel({ users }: { users: UserRow[] }) {
         <OutlinedInput
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search license key..."
-          inputProps={{ "aria-label": "Search license key" }}
+          placeholder="Search username..."
+          inputProps={{ "aria-label": "Search username" }}
           sx={{
             flex: 1,
             minWidth: 240,
@@ -108,14 +108,14 @@ export default function UsersTablePanel({ users }: { users: UserRow[] }) {
             inputProps={{ "aria-label": "Sort by" }}
             renderValue={(value) => {
               const labels: Record<SortBy, string> = {
-                auth_token: "License Key",
+                username: "Username",
                 collections: "Collections",
                 expires_at: "Expires At",
               };
               return `Sort by: ${labels[value as SortBy]}`;
             }}
           >
-            <MenuItem value="auth_token">License Key</MenuItem>
+            <MenuItem value="username">Username</MenuItem>
             <MenuItem value="collections">Collections</MenuItem>
             <MenuItem value="expires_at">Expires At</MenuItem>
           </Select>

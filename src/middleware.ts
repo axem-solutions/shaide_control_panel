@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   AUTH_TOKEN_COOKIE,
-  IS_ADMIN_COOKIE,
-  SESSION_MAX_AGE_SECONDS,
-  getSecureCookieFlag,
+  SESSION_EXPIRES_AT_COOKIE,
+  isSessionExpired,
+  parseSessionExpiresAt,
 } from "@/lib/session-config";
 
-const MAX_AGE_SECONDS = SESSION_MAX_AGE_SECONDS;
 const PUBLIC_PATHS = new Set(["/"]);
 
 export function middleware(request: NextRequest) {
@@ -17,9 +16,12 @@ export function middleware(request: NextRequest) {
   }
 
   const authToken = request.cookies.get(AUTH_TOKEN_COOKIE)?.value;
-  const isAdmin = request.cookies.get(IS_ADMIN_COOKIE)?.value;
+  const sessionExpiresAt = parseSessionExpiresAt(
+    request.cookies.get(SESSION_EXPIRES_AT_COOKIE)?.value,
+  );
 
-  if (!authToken || !isAdmin) {
+  // The session lasts exactly as long as the access token
+  if (!authToken || isSessionExpired(sessionExpiresAt)) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/";
     loginUrl.searchParams.set("reason", "expired");
@@ -27,7 +29,6 @@ export function middleware(request: NextRequest) {
   }
 
   const response = NextResponse.next();
-  const expiresAt = new Date(Date.now() + MAX_AGE_SECONDS * 1000);
 
   response.headers.set(
     "Cache-Control",
@@ -35,24 +36,6 @@ export function middleware(request: NextRequest) {
   );
   response.headers.set("Pragma", "no-cache");
   response.headers.set("Expires", "0");
-
-  response.cookies.set(AUTH_TOKEN_COOKIE, authToken, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: getSecureCookieFlag(request),
-    maxAge: MAX_AGE_SECONDS,
-    expires: expiresAt,
-    path: "/",
-  });
-
-  response.cookies.set(IS_ADMIN_COOKIE, isAdmin, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: getSecureCookieFlag(request),
-    maxAge: MAX_AGE_SECONDS,
-    expires: expiresAt,
-    path: "/",
-  });
 
   return response;
 }
