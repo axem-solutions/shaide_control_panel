@@ -7,11 +7,15 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
+    "check-types": "next typegen && tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "docker:build": "docker build -t control-panel:latest .",
     "docker:run": "docker run --rm -p 3000:3000 --add-host=host.docker.internal:host-gateway --name control-panel control-panel:latest",
     "docker:run:detached": "docker run -d --rm -p 3000:3000 --add-host=host.docker.internal:host-gateway --name control-panel control-panel:latest",
     "docker:stop": "docker stop control-panel",
-    "release": "npx tsx scripts/release.ts"
+    "release": "npx tsx scripts/release.ts",
+    "prepare": "husky"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -27,15 +31,25 @@
     "react-dom": "19.1.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.5.3",
+    "@commitlint/config-conventional": "^20.5.3",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.5",
     "eslint": "^9",
     "eslint-config-next": "15.5.22",
+    "husky": "^9.1.7",
+    "jsdom": "^29.1.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   },
   "overrides": {
     "next": {

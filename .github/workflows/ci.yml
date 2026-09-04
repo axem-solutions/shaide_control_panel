@@ -2,10 +2,14 @@ name: CI
 
 on:
   pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch: {}
 
 jobs:
   validate:
-    name: Lint and Build
+    name: Lint, Types, Test and Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -22,6 +26,14 @@ jobs:
 
       - name: Run linter
         run: npm run lint
+
+      # `next build` only type-checks files reachable from the app, so test
+      # files need an explicit tsc pass — this is what the pre-push hook runs.
+      - name: Check types
+        run: npm run check-types
+
+      - name: Run tests
+        run: npm test
 
       - name: Build
         run: npm run build

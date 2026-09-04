@@ -1,0 +1,13 @@
+if ! node_modules/.bin/commitlint --version >/dev/null 2>&1; then
+	echo "Commitlint is unavailable. Your node_modules is out of date; run npm install."
+	exit 1
+fi
+
+if ! node_modules/.bin/commitlint --edit "$1"; then
+	echo ""
+	echo "Commit message must follow Conventional Commits: <type>[(scope)]: <subject>"
+	echo "  e.g.  feat: add reasoning effort setting"
+	echo "        fix(ci): download only installer artifacts"
+	echo "  types: build chore ci docs feat fix perf refactor revert style test"
+	exit 1
+fi
