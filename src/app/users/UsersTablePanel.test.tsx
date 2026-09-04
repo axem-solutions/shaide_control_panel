@@ -26,14 +26,14 @@ function getBodyRowUsernames() {
 
 describe("UsersTablePanel filtering and sorting", () => {
   it("renders all users sorted by username by default", () => {
-    render(<UsersTablePanel users={users} />);
+    render(<UsersTablePanel users={users} showCollections />);
 
     expect(getBodyRowUsernames()).toEqual(["alpha-user", "mike-user", "zulu-admin"]);
   });
 
   it("filters rows by the search term, case-insensitively", async () => {
     const user = userEvent.setup();
-    render(<UsersTablePanel users={users} />);
+    render(<UsersTablePanel users={users} showCollections />);
 
     await user.type(screen.getByLabelText("Search username"), "ALPHA");
 
@@ -42,7 +42,7 @@ describe("UsersTablePanel filtering and sorting", () => {
 
   it("shows the empty state when no username matches the search", async () => {
     const user = userEvent.setup();
-    render(<UsersTablePanel users={users} />);
+    render(<UsersTablePanel users={users} showCollections />);
 
     await user.type(screen.getByLabelText("Search username"), "no-such-user");
 
@@ -51,7 +51,7 @@ describe("UsersTablePanel filtering and sorting", () => {
 
   it("hides the admin user when the Show admin switch is turned off", async () => {
     const user = userEvent.setup();
-    render(<UsersTablePanel users={users} />);
+    render(<UsersTablePanel users={users} showCollections />);
 
     await user.click(screen.getByLabelText("Show admin"));
 
@@ -60,7 +60,7 @@ describe("UsersTablePanel filtering and sorting", () => {
 
   it("sorts by collection count (descending, id tiebreak) when selected", async () => {
     const user = userEvent.setup();
-    render(<UsersTablePanel users={users} />);
+    render(<UsersTablePanel users={users} showCollections />);
 
     await user.click(screen.getByRole("combobox", { name: /Sort by/ }));
     await user.click(screen.getByRole("option", { name: "Collections" }));
@@ -70,7 +70,7 @@ describe("UsersTablePanel filtering and sorting", () => {
 
   it("sorts users without expiry last when sorting by Expires At", async () => {
     const user = userEvent.setup();
-    render(<UsersTablePanel users={users} />);
+    render(<UsersTablePanel users={users} showCollections />);
 
     await user.click(screen.getByRole("combobox", { name: /Sort by/ }));
     await user.click(screen.getByRole("option", { name: "Expires At" }));
