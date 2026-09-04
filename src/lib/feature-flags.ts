@@ -3,6 +3,6 @@ import "server-only";
 const ENABLED_VALUES = new Set(["true", "1", "yes", "on"]);
 
 export function isKnowledgeCenterEnabled(): boolean {
-  const raw = process.env.CONTROL_PANEL_ENABLED?.trim().toLowerCase();
+  const raw = process.env.KNOWLEDGE_CENTER_ENABLED?.trim().toLowerCase();
   return raw !== undefined && ENABLED_VALUES.has(raw);
 }

@@ -2,56 +2,100 @@ import { NextResponse } from "next/server";
 import { loginUser } from "@/services/login-user";
 import {
   AUTH_TOKEN_COOKIE,
-  IS_ADMIN_COOKIE,
-  SESSION_MAX_AGE_SECONDS,
+  ROLE_COOKIE,
+  LICENSE_EXPIRY_COOKIE,
+  SESSION_EXPIRES_AT_COOKIE,
+  SESSION_EXPIRES_AT_HINT_COOKIE,
+  SESSION_SIGNATURE_COOKIE,
+  USERNAME_COOKIE,
   getSecureCookieFlag,
+  getSessionCookieLifetime,
+  resolveSessionExpiresAt,
 } from "@/lib/session-config";
+import { signSession } from "@/lib/session-signature";
 import { parseJsonBody } from "../_utils";
 
 export async function POST(request: Request) {
   const body = await parseJsonBody(request);
   const username = typeof body?.username === "string" ? body.username.trim() : "";
+  const password = typeof body?.password === "string" ? body.password : "";
 
-  if (!username) {
+  if (!username || !password) {
     return Response.json(
-      { auth_token: "", error: "License Key is required." },
+      { error: "Username and password are required." },
       { status: 400 },
     );
   }
 
-  const result = await loginUser(username === username.trim() ? username : "");
-  const missingRequiredFields =
-    !result.error &&
-    (result.user_id === undefined || result.is_admin === undefined);
+  const result = await loginUser(username, password);
 
-  const status = result.error || missingRequiredFields ? 401 : 200;
+  if (result.error || !result.access_token) {
+    return NextResponse.json(
+      { error: result.error || "Backend returned an invalid login payload." },
+      { status: 401 },
+    );
+  }
 
-  const responsePayload = missingRequiredFields
-    ? {
-        error: "Backend returned an invalid login payload.",
-      }
-    : result;
+  const now = Date.now();
+  // Session lifetime is owned by the server: the deadline is fixed here from
+  // `token_expires_in` and is never extended by activity.
+  const sessionExpiresAt = resolveSessionExpiresAt(result.token_expires_in, now);
+  const lifetime = getSessionCookieLifetime(sessionExpiresAt, now);
 
-  const response = NextResponse.json(responsePayload, { status });
-  const maxAgeSeconds = SESSION_MAX_AGE_SECONDS;
-  const expiresAt = new Date(Date.now() + maxAgeSeconds * 1000);
+  if (!lifetime) {
+    return NextResponse.json(
+      { error: "Backend issued an already-expired access token." },
+      { status: 401 },
+    );
+  }
 
-  if (!result.error && !missingRequiredFields) {
-    response.cookies.set(AUTH_TOKEN_COOKIE, result.auth_token || username, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: getSecureCookieFlag(request),
-      maxAge: maxAgeSeconds,
-      expires: expiresAt,
-      path: "/",
-    });
-    response.cookies.set(IS_ADMIN_COOKIE, result.is_admin ? "true" : "false", {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: getSecureCookieFlag(request),
-      maxAge: maxAgeSeconds,
-      expires: expiresAt,
-      path: "/",
+  const role = result.role ?? "user";
+  const signature = await signSession({
+    authToken: result.access_token,
+    role,
+    username,
+    sessionExpiresAt,
+  });
+
+  if (!signature) {
+    return NextResponse.json(
+      { error: "Server is misconfigured. Contact your administrator." },
+      { status: 500 },
+    );
+  }
+
+  const response = NextResponse.json(result, { status: 200 });
+
+  const cookieOptions = {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: getSecureCookieFlag(request),
+    maxAge: lifetime.maxAgeSeconds,
+    expires: lifetime.expiresAt,
+    path: "/",
+  };
+
+  response.cookies.set(AUTH_TOKEN_COOKIE, result.access_token, cookieOptions);
+  response.cookies.set(ROLE_COOKIE, role, cookieOptions);
+  // Identifies the signed-in user in the header and against `/v1/users` rows,
+  // which no longer carry anything else the session can be matched on.
+  response.cookies.set(USERNAME_COOKIE, username, cookieOptions);
+  response.cookies.set(SESSION_EXPIRES_AT_COOKIE, String(sessionExpiresAt), cookieOptions);
+  response.cookies.set(SESSION_SIGNATURE_COOKIE, signature, cookieOptions);
+  // Display-only; see the note on SESSION_EXPIRES_AT_HINT_COOKIE.
+  response.cookies.set(SESSION_EXPIRES_AT_HINT_COOKIE, String(sessionExpiresAt), {
+    ...cookieOptions,
+    httpOnly: false,
+  });
+
+  if (result.account_expires_at) {
+    response.cookies.set(LICENSE_EXPIRY_COOKIE, result.account_expires_at, cookieOptions);
+  } else {
+    // Accounts without an expiry (admins) must not inherit a stale value.
+    response.cookies.set(LICENSE_EXPIRY_COOKIE, "", {
+      ...cookieOptions,
+      maxAge: 0,
+      expires: undefined,
     });
   }
 

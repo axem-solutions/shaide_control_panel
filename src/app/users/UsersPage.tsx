@@ -4,6 +4,7 @@ import { getCollections, type CollectionsResponse } from "../../services/fetch-c
 import { cookies } from "next/headers";
 import { AUTH_TOKEN_COOKIE } from "@/lib/session-config";
 import { isKnowledgeCenterEnabled } from "@/lib/feature-flags";
+import { getTrustedSession } from "@/lib/session-signature";
 import { Box, Alert } from "@mui/material";
 
 /**
@@ -33,7 +34,10 @@ async function loadCollections(
 export default async function Page() {
   const knowledgeCenterEnabled = isKnowledgeCenterEnabled();
   const data = await getUsers();
-  const adminToken = (await cookies()).get(AUTH_TOKEN_COOKIE)?.value ?? "";
+  const cookieStore = await cookies();
+  const adminToken = cookieStore.get(AUTH_TOKEN_COOKIE)?.value ?? "";
+  const currentUsername = (await getTrustedSession())?.username ?? "";
+  // Skips the request entirely when the Knowledge Center is not installed.
   const collectionsData = await loadCollections(adminToken, knowledgeCenterEnabled);
 
   const membershipsByUserId = new Map<number, string[]>();
@@ -46,7 +50,7 @@ export default async function Page() {
 
   const users = data.users.map((user) => ({
     ...user,
-    isCurrentAdmin: adminToken !== "" && user.auth_token === adminToken,
+    isCurrentAdmin: currentUsername !== "" && user.username === currentUsername,
     collectionNames: membershipsByUserId.get(user.id) ?? [],
   }));
 

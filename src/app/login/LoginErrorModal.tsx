@@ -13,19 +13,19 @@ import {
   Typography,
 } from "@mui/material";
 
-type LicenseKeyErrorModalProps = {
+type LoginErrorModalProps = {
   open: boolean;
   onClose: () => void;
   title?: string;
   description?: string;
 };
 
-export default function LicenseKeyErrorModal({
+export default function LoginErrorModal({
   open,
   onClose,
-  title = "Invalid License Key",
-  description = "The provided License Key is not valid.",
-}: LicenseKeyErrorModalProps) {
+  title = "Sign-in failed",
+  description = "Invalid username or password.",
+}: LoginErrorModalProps) {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle

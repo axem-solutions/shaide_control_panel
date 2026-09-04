@@ -1,6 +1,6 @@
 export type User = {
   id: number;
-  auth_token: string;
+  username: string;
   expires_at?: string;
 };
 

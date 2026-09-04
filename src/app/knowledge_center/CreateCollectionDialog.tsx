@@ -63,7 +63,7 @@ type CreateCollectionDialogProps = {
 	isAdmin: boolean;
 	users: CollectionUser[];
 	usersError?: string;
-	currentAuthToken?: string;
+	currentUsername?: string;
 	onSaved?: () => void;
 	mode?: "create" | "edit";
 	collectionId?: number;
@@ -82,7 +82,7 @@ export default function CreateCollectionDialog({
 	isAdmin,
 	users,
 	usersError,
-	currentAuthToken,
+	currentUsername,
 	onSaved,
 	mode = "create",
 	collectionId,
@@ -126,11 +126,11 @@ export default function CreateCollectionDialog({
 	}, [open]);
 
 	const sortedUsers = useMemo(() => {
-		const visibleUsers = currentAuthToken
-			? users.filter((user) => user.auth_token !== currentAuthToken)
+		const visibleUsers = currentUsername
+			? users.filter((user) => user.username !== currentUsername)
 			: users;
 		return [...visibleUsers].sort((a, b) => a.id - b.id);
-	}, [users, currentAuthToken]);
+	}, [users, currentUsername]);
 
 	const isEdit = mode === "edit";
 	const normalizedInitialName = useMemo(() => initialName.trim(), [initialName]);
@@ -566,7 +566,7 @@ export default function CreateCollectionDialog({
 											component="code"
 											sx={{ fontSize: 12, wordBreak: "break-all", minWidth: 0 }}
 										>
-											{user.auth_token || "No token"}
+											{user.username || "Unknown user"}
 										</Box>
 										<Toggle
 											isToggled={assignedUsers.has(user.id)}

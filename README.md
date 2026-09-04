@@ -42,7 +42,7 @@ The UI self-hosts its font (see "Design system" below); no request leaves the de
 
 ## Feature availability
 
-`CONTROL_PANEL_ENABLED` tells the UI whether the Knowledge Center service is part of
+`KNOWLEDGE_CENTER_ENABLED` tells the UI whether the Knowledge Center service is part of
 this installation. It is **opt-in**: the Knowledge Center tile only appears on the
 Control Panel home page — for admins and normal users alike — when the variable is set
 to `true` (`1`/`yes`/`on` also count). Unset or any other value hides it, so an

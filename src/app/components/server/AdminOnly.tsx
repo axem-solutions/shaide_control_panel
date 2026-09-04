@@ -1,14 +1,15 @@
 import type { ReactNode } from "react";
-import { cookies } from "next/headers";
-import { AUTH_TOKEN_COOKIE } from "@/lib/session-config";
+import { isAdminSession } from "@/lib/session-signature";
 import { redirect } from "next/navigation";
-import { verifySession } from "@/services/verify-session";
 
+/**
+ * Admin status comes from the `role` returned by `POST /v1/login`, held in
+ * `shaide_role` for the session.
+ */
 export default async function AdminOnly({ children }: { children: ReactNode }) {
-  const authToken = (await cookies()).get(AUTH_TOKEN_COOKIE)?.value;
-  const session = authToken ? await verifySession(authToken) : null;
+  const isAdmin = await isAdminSession();
 
-  if (!session?.is_admin) {
+  if (!isAdmin) {
     redirect("/home");
   }
 

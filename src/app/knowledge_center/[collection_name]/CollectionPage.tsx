@@ -23,7 +23,7 @@ type CollectionPageProps = {
 	isAdmin: boolean;
 	users: CollectionUser[];
 	usersError?: string;
-	currentAuthToken?: string;
+	currentUsername?: string;
 	existingCollectionNames?: string[];
 };
 
@@ -47,7 +47,7 @@ export default function CollectionPage({
 	isAdmin,
 	users,
 	usersError,
-	currentAuthToken,
+	currentUsername,
 	existingCollectionNames = [],
 }: CollectionPageProps) {
 	const [isHydrated, setIsHydrated] = useState(false);
@@ -281,7 +281,7 @@ export default function CollectionPage({
 							isAdmin={isAdmin}
 							users={users}
 							usersError={usersError}
-							currentAuthToken={currentAuthToken}
+							currentUsername={currentUsername}
 							onSaved={triggerRefresh}
 							mode="edit"
 							collectionId={collectionId}

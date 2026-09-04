@@ -21,8 +21,8 @@ import Tag from "@/app/components/server/ui/Tag";
 
 const EXPIRY_WARNING_DAYS = 7;
 
-function renderHighlightedToken(token: string, searchTerm?: string) {
-  const parts = splitTextByQuery(token, searchTerm);
+function renderHighlightedValue(value: string, searchTerm?: string) {
+  const parts = splitTextByQuery(value, searchTerm);
 
   return parts.map((part, index) => {
     return part.isMatch ? (
@@ -67,16 +67,14 @@ export default function UsersTable({
       {users.length === 0 ? (
         <EmptyState
           title="No matching users"
-          description="No license key matches the current search and filters."
+          description="No user matches the current search and filters."
         />
       ) : (
         <TableContainer sx={{ overflowX: "auto" }}>
           <Table sx={{ width: "100%", tableLayout: "fixed" }}>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ width: showCollections ? "45%" : "65%" }}>
-                  License Key
-                </TableCell>
+                <TableCell sx={{ width: showCollections ? "45%" : "65%" }}>Username</TableCell>
                 {showCollections && <TableCell sx={{ width: "30%" }}>Collections</TableCell>}
                 <TableCell sx={{ width: showCollections ? "25%" : "35%" }}>Expires At</TableCell>
               </TableRow>
@@ -107,7 +105,7 @@ export default function UsersTable({
                             overflowWrap: "anywhere",
                           }}
                         >
-                          {renderHighlightedToken(u.auth_token, searchTerm)}
+                          {renderHighlightedValue(u.username, searchTerm)}
                         </Box>
                         {u.isCurrentAdmin && <StatusBadge tone="warning">Admin</StatusBadge>}
                       </Box>

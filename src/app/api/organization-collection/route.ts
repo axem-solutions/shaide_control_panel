@@ -89,7 +89,7 @@ export async function POST(request: Request) {
   }
 
   const adminUser = usersResponse.users.find(
-    (user) => user.auth_token === auth.authToken,
+    (user) => user.username === auth.username,
   );
 
   if (!adminUser) {
