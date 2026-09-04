@@ -8,7 +8,13 @@ import {
   modifyCollection,
   removeCollectionMembers,
 } from "@/services/modify-collection";
-import { jsonError, parseJsonBody, requireAdminToken, requireAuthToken } from "../_utils";
+import {
+  jsonError,
+  parseJsonBody,
+  requireAdminToken,
+  requireAuthToken,
+  requireKnowledgeCenter,
+} from "../_utils";
 import { parsePositiveIntegerArray } from "@/lib/collection-utils";
 
 function getBackendStatus(error: string) {
@@ -23,6 +29,11 @@ function getBackendStatus(error: string) {
 
 
 export async function GET() {
+  const availability = requireKnowledgeCenter();
+  if (!availability.ok) {
+    return availability.response;
+  }
+
   const auth = await requireAuthToken();
   if (!auth.ok) {
     return auth.response;
@@ -37,6 +48,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const availability = requireKnowledgeCenter();
+  if (!availability.ok) {
+    return availability.response;
+  }
+
   const auth = await requireAdminToken();
   if (!auth.ok) {
     return auth.response;
@@ -98,6 +114,11 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const availability = requireKnowledgeCenter();
+  if (!availability.ok) {
+    return availability.response;
+  }
+
   const auth = await requireAdminToken();
   if (!auth.ok) {
     return auth.response;
@@ -119,6 +140,11 @@ export async function DELETE(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  const availability = requireKnowledgeCenter();
+  if (!availability.ok) {
+    return availability.response;
+  }
+
   const auth = await requireAdminToken();
   if (!auth.ok) {
     return auth.response;

@@ -8,6 +8,7 @@ import {
   SESSION_TOUCH_COOLDOWN_SECONDS,
   getSecureCookieFlag,
 } from "@/lib/session-config";
+import { isKnowledgeCenterEnabled } from "@/lib/feature-flags";
 import { verifySession } from "@/services/verify-session";
 import { getCollections } from "@/services/fetch-collections";
 
@@ -84,6 +85,17 @@ export async function requireAdminToken() {
     authToken: session.authToken,
     isAdmin: "true",
   };
+}
+
+export function requireKnowledgeCenter() {
+  if (!isKnowledgeCenterEnabled()) {
+    return {
+      ok: false as const,
+      response: jsonError("Knowledge Center is not available.", 404),
+    };
+  }
+
+  return { ok: true as const };
 }
 
 /**

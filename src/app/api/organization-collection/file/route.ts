@@ -4,10 +4,16 @@ import {
   jsonError,
   parseJsonBody,
   requireAuthToken,
+  requireKnowledgeCenter,
   requireOrganizationAccess,
 } from "../../_utils";
 
 export async function DELETE(request: Request) {
+  const availability = requireKnowledgeCenter();
+  if (!availability.ok) {
+    return availability.response;
+  }
+
   const auth = await requireAuthToken();
   if (!auth.ok) {
     return auth.response;
