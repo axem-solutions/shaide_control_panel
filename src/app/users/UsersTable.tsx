@@ -49,9 +49,12 @@ function renderHighlightedValue(value: string, searchTerm?: string) {
 export default function UsersTable({
   users,
   searchTerm,
+  showCollections,
 }: {
   users: UserRow[];
   searchTerm?: string;
+  /** Collection membership is Knowledge Center data; hidden when that service is off. */
+  showCollections: boolean;
 }) {
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -71,9 +74,9 @@ export default function UsersTable({
           <Table sx={{ width: "100%", tableLayout: "fixed" }}>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ width: "45%" }}>Username</TableCell>
-                <TableCell sx={{ width: "30%" }}>Collections</TableCell>
-                <TableCell sx={{ width: "25%" }}>Expires At</TableCell>
+                <TableCell sx={{ width: showCollections ? "45%" : "65%" }}>Username</TableCell>
+                {showCollections && <TableCell sx={{ width: "30%" }}>Collections</TableCell>}
+                <TableCell sx={{ width: showCollections ? "25%" : "35%" }}>Expires At</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -107,26 +110,28 @@ export default function UsersTable({
                         {u.isCurrentAdmin && <StatusBadge tone="warning">Admin</StatusBadge>}
                       </Box>
                     </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap" }}>
-                        {(u.collectionNames ?? []).map((collectionName) => (
-                          <Tag key={`${u.id}-${collectionName}`}>
-                            <Box
-                              component={Link}
-                              href={`/knowledge_center/${encodeURIComponent(collectionName)}`}
-                              sx={{ color: "inherit", textDecoration: "none" }}
-                            >
-                              {collectionName}
-                            </Box>
-                          </Tag>
-                        ))}
-                        {(u.collectionNames ?? []).length === 0 && (
-                          <Typography variant="body2" sx={{ color: "var(--ax-fg-dim)" }}>
-                            No collections
-                          </Typography>
-                        )}
-                      </Box>
-                    </TableCell>
+                    {showCollections && (
+                      <TableCell>
+                        <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap" }}>
+                          {(u.collectionNames ?? []).map((collectionName) => (
+                            <Tag key={`${u.id}-${collectionName}`}>
+                              <Box
+                                component={Link}
+                                href={`/knowledge_center/${encodeURIComponent(collectionName)}`}
+                                sx={{ color: "inherit", textDecoration: "none" }}
+                              >
+                                {collectionName}
+                              </Box>
+                            </Tag>
+                          ))}
+                          {(u.collectionNames ?? []).length === 0 && (
+                            <Typography variant="body2" sx={{ color: "var(--ax-fg-dim)" }}>
+                              No collections
+                            </Typography>
+                          )}
+                        </Box>
+                      </TableCell>
+                    )}
                     <TableCell>
                       <Box
                         sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}

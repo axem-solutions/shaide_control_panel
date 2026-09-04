@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { AUTH_TOKEN_COOKIE } from "@/lib/session-config";
+import { isKnowledgeCenterEnabled } from "@/lib/feature-flags";
 import { getTrustedSession } from "@/lib/session-signature";
 import { redirect } from "next/navigation";
 import { Box } from "@mui/material";
@@ -21,6 +22,9 @@ export default async function Page() {
   const username = (await getTrustedSession())?.username;
   if (!token) {
     redirect("/");
+  }
+  if (!isKnowledgeCenterEnabled()) {
+    redirect("/home");
   }
 
   const isAdmin = (await getTrustedSession())?.role === "admin";

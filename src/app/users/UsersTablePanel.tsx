@@ -40,7 +40,14 @@ async function uploadLicenseFile(file: File): Promise<FileUploadResult> {
 
 type SortBy = "username" | "collections" | "expires_at";
 
-export default function UsersTablePanel({ users }: { users: UserRow[] }) {
+export default function UsersTablePanel({
+  users,
+  showCollections,
+}: {
+  users: UserRow[];
+  /** Collection membership is Knowledge Center data; hidden when that service is off. */
+  showCollections: boolean;
+}) {
   const router = useRouter();
   const [sortBy, setSortBy] = useState<SortBy>("username");
   const [search, setSearch] = useState("");
@@ -79,7 +86,12 @@ export default function UsersTablePanel({ users }: { users: UserRow[] }) {
 
   return (
     <Box>
-      <PageIntro title="Users" subtitle="Manage users and collection memberships." />
+      <PageIntro
+        title="Users"
+        subtitle={
+          showCollections ? "Manage users and collection memberships." : "Manage users."
+        }
+      />
 
       <Box
         sx={{
@@ -116,7 +128,7 @@ export default function UsersTablePanel({ users }: { users: UserRow[] }) {
             }}
           >
             <MenuItem value="username">Username</MenuItem>
-            <MenuItem value="collections">Collections</MenuItem>
+            {showCollections && <MenuItem value="collections">Collections</MenuItem>}
             <MenuItem value="expires_at">Expires At</MenuItem>
           </Select>
         </FormControl>
@@ -156,7 +168,11 @@ export default function UsersTablePanel({ users }: { users: UserRow[] }) {
         </Box>
       </Box>
 
-      <UsersTable users={filteredUsers} searchTerm={search} />
+      <UsersTable
+        users={filteredUsers}
+        searchTerm={search}
+        showCollections={showCollections}
+      />
     </Box>
   );
 }

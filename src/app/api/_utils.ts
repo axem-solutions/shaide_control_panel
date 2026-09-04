@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { UserRole } from "@/lib/session-config";
+import { isKnowledgeCenterEnabled } from "@/lib/feature-flags";
 import { getTrustedSession, isAdminSession } from "@/lib/session-signature";
 import { getCollections } from "@/services/fetch-collections";
 
@@ -70,6 +71,24 @@ export async function requireAdminToken() {
     role: session.role,
     username: session.username,
   };
+}
+
+/**
+ * Rejects Knowledge Center requests when the deployment has not switched the
+ * service on, so the `CONTROL_PANEL_ENABLED` flag is enforced on the API the
+ * same way it is on the `/knowledge_center` pages. Answers 404 rather than 403:
+ * with the service absent the endpoint does not meaningfully exist, and there is
+ * no per-caller permission to explain.
+ */
+export function requireKnowledgeCenter() {
+  if (!isKnowledgeCenterEnabled()) {
+    return {
+      ok: false as const,
+      response: jsonError("Knowledge Center is not available.", 404),
+    };
+  }
+
+  return { ok: true as const };
 }
 
 /**

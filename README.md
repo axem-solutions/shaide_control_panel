@@ -40,6 +40,29 @@ Environment setup:
 
 The UI self-hosts its font (see "Design system" below); no request leaves the deployment at runtime.
 
+## Feature availability
+
+`KNOWLEDGE_CENTER_ENABLED` tells the UI whether the Knowledge Center service is part of
+this installation. It is **opt-in**: the Knowledge Center tile only appears on the
+Control Panel home page — for admins and normal users alike — when the variable is set
+to `true` (`1`/`yes`/`on` also count). Unset or any other value hides it, so an
+installation that does not run the service never advertises it.
+
+The `/knowledge_center` routes guard on the same flag and redirect to `/home` when it is
+off, so the feature is not reachable by URL either. The guard lives in the page components
+(`src/lib/feature-flags.ts` is read from the Node runtime) rather than in `src/middleware.ts`,
+because middleware runs on the Edge runtime, where `process.env` is inlined at build time —
+the flag has to stay a deployment-time setting, not a build-time one.
+
+The Knowledge Center API routes (`/api/organization-collection`, its `/file` child,
+`/api/object-storage/presigned-url` and `/api/embedding-models`) enforce the same flag through
+`requireKnowledgeCenter()` in `src/app/api/_utils.ts`, answering 404 when the service is off so
+an authenticated caller cannot reach them by hand.
+
+The Users page follows the flag too: collection membership is Knowledge Center data, so with
+the service off it skips the membership request entirely and drops the Collections column, its
+sort option and the collection links, rather than warning about a backend that is not there.
+
 ## Design system
 
 The UI is a themed MUI app. Three files hold the whole visual layer — change them,

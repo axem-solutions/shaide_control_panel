@@ -2,6 +2,7 @@ import CollectionPage from "./CollectionPage";
 import CollectionNotFound from "./CollectionNotFound";
 import { cookies } from "next/headers";
 import { AUTH_TOKEN_COOKIE } from "@/lib/session-config";
+import { isKnowledgeCenterEnabled } from "@/lib/feature-flags";
 import { getTrustedSession } from "@/lib/session-signature";
 import { redirect } from "next/navigation";
 import { Box } from "@mui/material";
@@ -24,6 +25,9 @@ export default async function Page({ params }: PageProps) {
   const username = (await getTrustedSession())?.username;
   if (!token) {
     redirect("/");
+  }
+  if (!isKnowledgeCenterEnabled()) {
+    redirect("/home");
   }
 
   const { collection_name } = await params;
