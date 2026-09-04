@@ -14,7 +14,8 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app is served under the `/control-panel` base path, so it lives at
+[http://localhost:3000/control-panel](http://localhost:3000/control-panel).
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
@@ -42,6 +43,18 @@ The UI self-hosts its font (see "Design system" below); no request leaves the de
 
 ## Feature availability
 
+Two environment variables set by the installer decide which tiles the Control Panel home
+page offers. Both are **opt-in**: a tile appears only when its variable is set to `true`
+(`1`/`yes`/`on` also count), so an installation that does not run the service never
+advertises it. Both are parsed in `src/lib/feature-flags.ts`.
+
+| Variable | Controls |
+|---|---|
+| `KNOWLEDGE_CENTER_ENABLED` | The Knowledge Center tile and the `/knowledge_center` routes. |
+| `APP_ENABLED` | The App tile, linking out to the shaide App. |
+
+### `KNOWLEDGE_CENTER_ENABLED`
+
 `KNOWLEDGE_CENTER_ENABLED` tells the UI whether the Knowledge Center service is part of
 this installation. It is **opt-in**: the Knowledge Center tile only appears on the
 Control Panel home page — for admins and normal users alike — when the variable is set
@@ -62,6 +75,14 @@ an authenticated caller cannot reach them by hand.
 The Users page follows the flag too: collection membership is Knowledge Center data, so with
 the service off it skips the membership request entirely and drops the Collections column, its
 sort option and the collection links, rather than warning about a backend that is not there.
+
+### `APP_ENABLED`
+
+`APP_ENABLED` adds an "App" tile that sends the user to the shaide App. The App is a
+separate deployment served next to the Control Panel, so the tile is a plain anchor to
+`/app` rather than a `next/link`: `next/link` prefixes the `basePath` and would point at
+`/control-panel/app`, a route this app does not serve. Routing `/app` to the App is the
+ingress's job — the Control Panel only renders the link.
 
 ## Design system
 
