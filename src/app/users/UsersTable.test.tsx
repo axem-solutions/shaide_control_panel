@@ -17,7 +17,7 @@ function makeUser(overrides: Partial<UserRow>): UserRow {
 
 describe("UsersTable row mapping", () => {
   it("shows the empty state instead of a table when there are no users", () => {
-    render(<UsersTable users={[]} />);
+    render(<UsersTable users={[]} showCollections />);
 
     expect(screen.getByText("No matching users")).toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
@@ -35,6 +35,7 @@ describe("UsersTable row mapping", () => {
           }),
           makeUser({ id: 2, username: "regular-user" }),
         ]}
+        showCollections
       />,
     );
 
@@ -52,7 +53,10 @@ describe("UsersTable row mapping", () => {
 
   it("flags an expired license with an Expired chip", () => {
     render(
-      <UsersTable users={[makeUser({ expires_at: isoFromNow(-HOUR_MS) })]} />,
+      <UsersTable
+        users={[makeUser({ expires_at: isoFromNow(-HOUR_MS) })]}
+        showCollections
+      />,
     );
 
     expect(screen.getByText("Expired")).toBeInTheDocument();
@@ -66,6 +70,7 @@ describe("UsersTable row mapping", () => {
           makeUser({ id: 2, username: "one-day", expires_at: isoFromNow(DAY_MS + HOUR_MS) }),
           makeUser({ id: 3, username: "three-days", expires_at: isoFromNow(3 * DAY_MS + HOUR_MS) }),
         ]}
+        showCollections
       />,
     );
 
@@ -77,7 +82,10 @@ describe("UsersTable row mapping", () => {
 
   it("shows no expiry chip for licenses valid beyond the warning window", () => {
     render(
-      <UsersTable users={[makeUser({ expires_at: isoFromNow(30 * DAY_MS) })]} />,
+      <UsersTable
+        users={[makeUser({ expires_at: isoFromNow(30 * DAY_MS) })]}
+        showCollections
+      />,
     );
 
     expect(screen.queryByText("Expired")).not.toBeInTheDocument();
@@ -86,7 +94,11 @@ describe("UsersTable row mapping", () => {
 
   it("highlights the matching part of the username for a search term", () => {
     render(
-      <UsersTable users={[makeUser({ username: "abc-xyz" })]} searchTerm="xyz" />,
+      <UsersTable
+        users={[makeUser({ username: "abc-xyz" })]}
+        searchTerm="xyz"
+        showCollections
+      />,
     );
 
     const highlighted = screen.getByText("xyz");
