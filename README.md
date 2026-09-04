@@ -121,11 +121,35 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## CI
 
-1. ci.yml — Triggers on every pull_request event. This is the required status check that must pass 
-before a PR can be merged. Runs:
-	- `npm run lint` — ESLint catches code quality issues and TypeScript rule violations early, 
-    before the build.
-    - `npm run build` — it runs TypeScript type-checking, validates all imports and routes, and 
-    confirms the app actually compiles to a deployable artifact.
-2. publish.yml — Triggers on every push to main (i.e. after a PR is merged). Builds the Docker image 
-and pushes it to GHCR tagged as latest.
+1. ci.yml — Triggers on every pull request, on pushes to `main`, and manually
+   from the Actions tab. This is the required status check that must pass before
+   a PR can be merged. Runs:
+   - `npm run lint` — ESLint catches code quality issues and TypeScript rule
+     violations early, before the build.
+   - `npm run check-types` — `tsc --noEmit` across the whole project. `next build`
+     only type-checks files reachable from the app, so this is what covers test
+     files.
+   - `npm test` — the vitest suite (unit + jsdom component tests).
+   - `npm run build` — validates all imports and routes, and confirms the app
+     actually compiles to a deployable artifact.
+2. publish.yml — Triggers on every push to main (i.e. after a PR is merged).
+   Builds the Docker image and pushes it to GHCR tagged as `dev` and `dev-<sha>`.
+
+## Commit Conventions
+
+Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/):
+`<type>[(scope)]: <subject>`.
+
+```
+feat: add reasoning effort setting
+fix(ci): download only installer artifacts
+```
+
+Allowed types: `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`,
+`revert`, `style`, `test`.
+
+Git hooks are installed automatically by `npm install`, no extra setup needed:
+
+- `pre-commit` runs `npm run lint`.
+- `commit-msg` validates the message against the rules above.
+- `pre-push` runs `npm run check-types`.
