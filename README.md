@@ -14,7 +14,7 @@ pnpm dev
 bun dev
 ```
 
-The app is served under the `/control-panel` base path, so it lives at
+Control panel is served under the `/control-panel` base path, so it lives at
 [http://localhost:3000/control-panel](http://localhost:3000/control-panel).
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
