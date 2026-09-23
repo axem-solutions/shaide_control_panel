@@ -1,6 +1,6 @@
 {
   "name": "shaide_control_panel",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
