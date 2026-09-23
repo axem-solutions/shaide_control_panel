@@ -38,7 +38,14 @@ RUN \
 
 # Production image, copy all the files and run next
 FROM base AS runner
-LABEL org.opencontainers.image.source=https://github.com/axem-solutions/control_panel
+
+# Links the published package to this repository on GHCR. CI sets the same
+# label through docker/metadata-action; declaring it here means locally built
+# images that are pushed by hand are linked too.
+LABEL org.opencontainers.image.source=https://github.com/axem-solutions/shaide_control_panel
+LABEL org.opencontainers.image.description="shaide control panel"
+LABEL org.opencontainers.image.licenses=Apache-2.0
+
 WORKDIR /app
 
 ENV NODE_ENV=production
