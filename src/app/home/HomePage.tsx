@@ -4,6 +4,7 @@ import { isAppEnabled, isKnowledgeCenterEnabled } from "@/lib/feature-flags";
 import { isAdminSession } from "@/lib/session-signature";
 import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
+import MemoryOutlinedIcon from "@mui/icons-material/MemoryOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import QueryStatsIcon from "@mui/icons-material/QueryStats";
 import { Box, Typography } from "@mui/material";
@@ -120,6 +121,13 @@ export default async function HomePage() {
         description: "View system logs and metrics dashboards.",
         action: "View",
         icon: <QueryStatsIcon sx={ICON_SX} />,
+      },
+      {
+        href: "/models",
+        title: "Models",
+        description: "Add new and manage installed models from shaide or third-party providers.",
+        action: "Manage",
+        icon: <MemoryOutlinedIcon sx={ICON_SX} />,
       },
     );
   }
