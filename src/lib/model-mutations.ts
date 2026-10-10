@@ -1,4 +1,5 @@
 import type { EmbeddingModelInput, GenerativeModelInput, ModelDeletion, ModelMutation } from "./model-types";
+import { NATIVE_FIM_MODES, REASONING_EFFORT_VALUES } from "./model-types";
 
 type JsonRecord = Record<string, unknown>;
 const isRecord = (value: unknown): value is JsonRecord => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -7,6 +8,11 @@ const positiveInteger = (value: unknown) => typeof value === "number" && Number.
 function optionalString(value: unknown): string | null | undefined {
   if (value === undefined || value === null || value === "") return null;
   return typeof value === "string" ? value.trim() : undefined;
+}
+
+function optionalInteger(value: unknown, minimum: number): number | null | undefined {
+  if (value === undefined || value === null) return null;
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= minimum ? value : undefined;
 }
 
 function parseGenerative(value: unknown): GenerativeModelInput | null {
@@ -24,6 +30,26 @@ function parseGenerative(value: unknown): GenerativeModelInput | null {
   const platform = optionalString(value.platform);
   if (completionsEndpoint === undefined || responsesEndpoint === undefined || platform === undefined) return null;
 
+  const dailyInputTokenLimit = optionalInteger(value.daily_input_token_limit, 0);
+  const dailyOutputTokenLimit = optionalInteger(value.daily_output_token_limit, 0);
+  const maxImagesPerRequest = optionalInteger(value.max_images_per_request, 1);
+  const maxImageBytes = optionalInteger(value.max_image_bytes, 1);
+  const maxImageWidth = optionalInteger(value.max_image_width_px, 1);
+  const maxImageHeight = optionalInteger(value.max_image_height_px, 1);
+  if ([dailyInputTokenLimit, dailyOutputTokenLimit, maxImagesPerRequest, maxImageBytes, maxImageWidth, maxImageHeight].includes(undefined)) return null;
+
+  const nativeFimMode = value.native_fim_mode ?? null;
+  if (nativeFimMode !== null && !NATIVE_FIM_MODES.some((mode) => mode === nativeFimMode)) return null;
+  // Whitespace in a FIM template is part of the prompt.
+  const fimPromptTemplate = value.fim_prompt_template ?? null;
+  if (fimPromptTemplate !== null && typeof fimPromptTemplate !== "string") return null;
+
+  if (value.supports_images !== undefined && typeof value.supports_images !== "boolean") return null;
+  const reasoningEffortValues = value.reasoning_effort_values ?? [];
+  if (!Array.isArray(reasoningEffortValues)
+    || reasoningEffortValues.some((item) => !REASONING_EFFORT_VALUES.some((option) => option === item))
+    || new Set(reasoningEffortValues).size !== reasoningEffortValues.length) return null;
+
   return {
     name,
     variant,
@@ -35,9 +61,15 @@ function parseGenerative(value: unknown): GenerativeModelInput | null {
     context_size: contextSize,
     platform,
     supports_images: value.supports_images === true,
-    reasoning_effort_values: Array.isArray(value.reasoning_effort_values)
-      ? value.reasoning_effort_values.filter((item): item is string => typeof item === "string")
-      : [],
+    reasoning_effort_values: reasoningEffortValues,
+    daily_input_token_limit: dailyInputTokenLimit,
+    daily_output_token_limit: dailyOutputTokenLimit,
+    max_images_per_request: maxImagesPerRequest,
+    max_image_bytes: maxImageBytes,
+    max_image_width_px: maxImageWidth,
+    max_image_height_px: maxImageHeight,
+    native_fim_mode: nativeFimMode as GenerativeModelInput["native_fim_mode"],
+    fim_prompt_template: fimPromptTemplate,
   };
 }
 
@@ -48,8 +80,9 @@ function parseEmbedding(value: unknown): EmbeddingModelInput | null {
   const vectorSize = positiveInteger(value.vector_size);
   const platform = optionalString(value.platform);
   const apiSchema = optionalString(value.api_schema);
-  if (!name || !url || !vectorSize || platform === undefined || apiSchema === undefined) return null;
-  return { name, url, vector_size: vectorSize, platform, api_schema: apiSchema };
+  const dailyInputTokenLimit = optionalInteger(value.daily_input_token_limit, 0);
+  if (!name || !url || !vectorSize || platform === undefined || apiSchema === undefined || dailyInputTokenLimit === undefined) return null;
+  return { name, url, vector_size: vectorSize, platform, api_schema: apiSchema, daily_input_token_limit: dailyInputTokenLimit };
 }
 
 export function parseModelMutation(value: unknown): ModelMutation | null {

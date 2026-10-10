@@ -11,11 +11,8 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControlLabel,
   IconButton,
   MenuItem,
-  Radio,
-  RadioGroup,
   Table,
   TableBody,
   TableCell,
@@ -25,10 +22,9 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import AddCustomModelDialog from "./AddCustomModelDialog";
 import { API_ROUTE_BASE } from "@/lib/api-route-base";
 import type {
-  EmbeddingModelInput,
-  GenerativeModelInput,
   InstalledModel,
   ModelKind,
   ModelMutation,
@@ -192,113 +188,6 @@ function InstalledModelsTable({
   );
 }
 
-const INITIAL_CUSTOM = {
-  name: "",
-  variant: "",
-  endpoint: "",
-  apiSchema: "open_ai",
-  platform: "",
-  maxGeneratedTokens: "4096",
-  contextSize: "32768",
-  vectorSize: "768",
-};
-
-function AddCustomModelDialog({
-  open,
-  busy,
-  onClose,
-  onSubmit,
-}: {
-  open: boolean;
-  busy: boolean;
-  onClose: () => void;
-  onSubmit: (mutation: ModelMutation) => void;
-}) {
-  const [kind, setKind] = useState<ModelKind>("generative");
-  const [values, setValues] = useState(INITIAL_CUSTOM);
-  const numberFieldsValid = kind === "generative"
-    ? Number(values.maxGeneratedTokens) > 0 && Number(values.contextSize) > 0
-    : Number(values.vectorSize) > 0;
-  const valid = Boolean(values.name.trim() && values.endpoint.trim() && values.apiSchema.trim() && numberFieldsValid);
-
-  const set = (field: keyof typeof INITIAL_CUSTOM) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    setValues((current) => ({ ...current, [field]: event.target.value }));
-  };
-
-  const submit = () => {
-    if (!valid) return;
-    if (kind === "generative") {
-      const model: GenerativeModelInput = {
-        name: values.name.trim(),
-        variant: values.variant.trim() || values.name.trim(),
-        chat_completions_endpoint: values.endpoint.trim(),
-        api_schema: values.apiSchema.trim(),
-        platform: values.platform.trim() || null,
-        max_generated_tokens: Number(values.maxGeneratedTokens),
-        context_size: Number(values.contextSize),
-        supports_images: false,
-        reasoning_effort_values: [],
-      };
-      onSubmit({ kind, model });
-    } else {
-      const model: EmbeddingModelInput = {
-        name: values.name.trim(),
-        url: values.endpoint.trim(),
-        vector_size: Number(values.vectorSize),
-        platform: values.platform.trim() || null,
-        api_schema: values.apiSchema.trim() || null,
-      };
-      onSubmit({ kind, model });
-    }
-  };
-
-  const close = () => {
-    if (busy) return;
-    setValues(INITIAL_CUSTOM);
-    setKind("generative");
-    onClose();
-  };
-
-  return (
-    <Dialog open={open} onClose={close} fullWidth maxWidth="md">
-      <DialogTitle>Add custom model</DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: "grid", gap: 2.5, paddingTop: 1 }}>
-          <RadioGroup row value={kind} onChange={(event) => setKind(event.target.value as ModelKind)}>
-            <FormControlLabel value="generative" control={<Radio />} label="Generative" />
-            <FormControlLabel value="embedding" control={<Radio />} label="Embedding" />
-          </RadioGroup>
-          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2 }}>
-            <TextField required label="Name" value={values.name} onChange={set("name")} />
-            {kind === "generative" && <TextField label="Variant" placeholder="Defaults to name" value={values.variant} onChange={set("variant")} />}
-            <TextField
-              required
-              label={kind === "generative" ? "Chat completions endpoint" : "Embeddings endpoint"}
-              value={values.endpoint}
-              onChange={set("endpoint")}
-              sx={{ gridColumn: { md: "1 / -1" } }}
-            />
-            <TextField required label="API schema" value={values.apiSchema} onChange={set("apiSchema")} />
-            <TextField label="Platform" value={values.platform} onChange={set("platform")} />
-            {kind === "generative" ? (
-              <>
-                <TextField required type="number" label="Max generated tokens" value={values.maxGeneratedTokens} onChange={set("maxGeneratedTokens")} />
-                <TextField required type="number" label="Context size" value={values.contextSize} onChange={set("contextSize")} />
-              </>
-            ) : (
-              <TextField required type="number" label="Vector size" value={values.vectorSize} onChange={set("vectorSize")} />
-            )}
-          </Box>
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={close} disabled={busy}>Cancel</Button>
-        <Button variant="contained" onClick={submit} disabled={!valid || busy}>{busy ? "Adding…" : "Add model"}</Button>
-      </DialogActions>
-    </Dialog>
-  );
-}
-
 export default function ModelsPage({
   initialInstalledModels,
   platformModels,
@@ -375,7 +264,7 @@ export default function ModelsPage({
       <PageIntro
         title="Models"
         subtitle="Manage the models available through shaide."
-        action={<Button variant="outlined" startIcon={<AddIcon />} onClick={() => setCustomOpen(true)}>Add custom model</Button>}
+        action={<Button variant="outlined" startIcon={<AddIcon />} onClick={() => { setError(undefined); setCustomOpen(true); }}>Add custom model</Button>}
       />
       <Box sx={{ display: "grid", gap: 3 }}>
         {error && <Alert severity="error">{error}</Alert>}
@@ -393,12 +282,12 @@ export default function ModelsPage({
         </Box>
       </Box>
 
-      <AddCustomModelDialog
-        open={customOpen}
+      {customOpen && <AddCustomModelDialog
+        error={error}
         busy={addingCustom}
         onClose={() => setCustomOpen(false)}
         onSubmit={(mutation) => void add(mutation, true)}
-      />
+      />}
       <Dialog open={Boolean(pendingDelete)} onClose={() => !deletingKey && setPendingDelete(null)}>
         <DialogTitle>Remove model?</DialogTitle>
         <DialogContent>

@@ -20,11 +20,11 @@ describe("model backend services", () => {
   it("combines generative and embedding models", async () => {
     fetchMock
       .mockResolvedValueOnce(new Response(JSON.stringify({ models: [{ id: 1, name: "chat", platform: "axem", context_size: 8192 }] }), { status: 200 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ models: [{ id: 2, name: "embed" }] }), { status: 200 }));
+      .mockResolvedValueOnce(new Response(JSON.stringify({ models: [{ id: 2, name: "text-embedding-3-large", platform: "foundry" }] }), { status: 200 }));
 
     await expect(getInstalledModels("token")).resolves.toEqual({ models: [
       { id: 1, kind: "generative", name: "chat", platform: "axem", contextSize: 8192 },
-      { id: 2, kind: "embedding", name: "embed" },
+      { id: 2, kind: "embedding", name: "text-embedding-3-large", platform: "foundry" },
     ] });
     expect(fetchMock.mock.calls.map(([url]) => new URL(String(url)).pathname)).toEqual([
       "/v1/models",

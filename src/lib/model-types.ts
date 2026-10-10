@@ -1,5 +1,8 @@
 export type ModelKind = "generative" | "embedding";
 
+export const REASONING_EFFORT_VALUES = ["none", "minimal", "low", "medium", "high", "xhigh"] as const;
+export const NATIVE_FIM_MODES = ["completions_suffix", "fim_tokens"] as const;
+
 export type InstalledModel = {
   id: number;
   kind: ModelKind;
@@ -37,6 +40,7 @@ export type EmbeddingModelInput = {
   vector_size: number;
   platform?: string | null;
   api_schema?: string | null;
+  daily_input_token_limit?: number | null;
 };
 
 export type PlatformGenerativeModel = GenerativeModelInput & {
