@@ -52,4 +52,31 @@ describe("ModelsPage", () => {
     await waitFor(() => expect(screen.queryByText("embed")).not.toBeInTheDocument());
     expect(JSON.parse(fetchMock.mock.calls[0][1]?.body as string)).toEqual({ kind: "embedding", id: 4 });
   });
+  it("refreshes discovered models and keeps the installed list separate", async () => {
+    const user = userEvent.setup();
+    fetchMock.mockResolvedValueOnce(Response.json({models:[{
+      kind:"embedding",name:"new-embed",url:"http://embed/v1/embeddings",vector_size:768,platform:"axem"
+    }],error:"models/broken: Runtime metadata is unavailable."}));
+    render(<ModelsPage initialInstalledModels={[{id:1,kind:"generative",name:"registered"}]} platformModels={[]} />);
+    await user.click(screen.getByRole("button", {name:"Refresh available models"}));
+    await screen.findByText("models/broken: Runtime metadata is unavailable.");
+    expect(screen.getByText("registered")).toBeInTheDocument();
+    await user.click(screen.getByLabelText("Available model"));
+    expect(screen.getByRole("option",{name:/new-embed/})).toBeInTheDocument();
+    expect(fetchMock.mock.calls[0][0]).toContain("/api/platform-models");
+    expect(fetchMock.mock.calls[0][1]?.cache).toBe("no-store");
+  });
+
+  it("clears stale platform choices after a failed refresh", async () => {
+    const user = userEvent.setup();
+    fetchMock.mockResolvedValueOnce(Response.json({models:[],error:"Discovery unavailable"},{status:503}));
+    render(<ModelsPage initialInstalledModels={[]} platformModels={[{
+      kind:"embedding",name:"stale",url:"http://embed/v1/embeddings",vector_size:768
+    }]} />);
+    await user.click(screen.getByRole("button", {name:"Refresh available models"}));
+    await screen.findByText("Discovery unavailable");
+    expect(screen.queryByLabelText("Available model")).not.toBeInTheDocument();
+    expect(screen.getByRole("button",{name:"Add custom model"})).toBeEnabled();
+  });
+
 });

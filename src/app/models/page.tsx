@@ -9,8 +9,8 @@ export const metadata: Metadata = { title: "Models" };
 
 export default async function Page() {
   const session = await getTrustedSession();
-  const [installed, platform] = session
-    ? await Promise.all([getInstalledModels(session.authToken), getPlatformModels()])
+  const [installed, platform] = session?.role === "admin"
+    ? await Promise.all([getInstalledModels(session.authToken), getPlatformModels(session.authToken)])
     : [{ models: [], error: "Invalid session." }, { models: [] }];
 
   return (

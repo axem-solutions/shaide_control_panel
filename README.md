@@ -197,3 +197,21 @@ Git hooks are installed automatically by `npm install`, no extra setup needed:
 - `pre-commit` runs `npm run lint`.
 - `commit-msg` validates the message against the rules above.
 - `pre-push` runs `npm run check-types`.
+## AI Platform model discovery
+
+The admin Models page fetches registration-ready settings from shaide-server's
+`GET /v1/platform-models` API, using the administrator's token on the server side.
+The browser only calls the Control Panel's authenticated `/api/platform-models`
+proxy. No model catalog file, ConfigMap mount or `VLLM_CONFIG_PATH` is used.
+
+shaide-server discovers labeled Kubernetes Services and reads vLLM runtime
+metadata. **Refresh available models** reloads the catalog; the server caches
+its discovery result for up to 30 seconds. Unreachable models, missing required
+metadata and duplicate served names appear as catalog errors while healthy
+models remain selectable. Discovery never runs inference probes. Outside
+Kubernetes, discovery is unavailable and custom models can still be added.
+
+Discovering a model does not enable it for users. **Add** registers it through
+the existing server model APIs; **Remove** deletes that registration without
+changing the platform deployment. Registered models and custom third-party
+settings continue to use the existing database-backed APIs.

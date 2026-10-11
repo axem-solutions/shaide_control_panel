@@ -1,123 +1,70 @@
 import "server-only";
 
-import { readFile } from "node:fs/promises";
-import type {
-  PlatformEmbeddingModel,
-  PlatformGenerativeModel,
-  PlatformModel,
-} from "@/lib/model-types";
-
-export const DEFAULT_VLLM_CONFIG_PATH = "/etc/shaide/vllm-config.json";
+import { parseModelMutation } from "@/lib/model-mutations";
+import type { PlatformModel } from "@/lib/model-types";
+import { requestBackendJson } from "./server-http";
 
 export type PlatformModelsResponse = {
   models: PlatformModel[];
   error?: string;
+  status?: number;
 };
 
-type JsonRecord = Record<string, unknown>;
-
-function isRecord(value: unknown): value is JsonRecord {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function requiredString(record: JsonRecord, key: string): string | null {
-  const value = record[key];
-  return typeof value === "string" && value.trim() ? value.trim() : null;
-}
-
-function requiredInteger(record: JsonRecord, key: string): number | null {
-  const value = record[key];
-  return typeof value === "number" && Number.isSafeInteger(value) && value > 0
-    ? value
-    : null;
-}
-
-function parseGenerative(value: unknown): PlatformGenerativeModel | null {
-  if (!isRecord(value)) {
-    return null;
-  }
-
-  const name = requiredString(value, "name");
-  const endpoint = requiredString(value, "chat-completion-endpoint");
-  const apiSchema = requiredString(value, "api-schema");
-  const platform = requiredString(value, "platform");
-  const maxGeneratedTokens = requiredInteger(value, "max-generated-tokens");
-  const contextSize = requiredInteger(value, "context-size");
-
-  if (!name || !endpoint || !apiSchema || !platform || !maxGeneratedTokens || !contextSize) {
-    return null;
-  }
-
-  return {
-    kind: "generative",
-    name,
-    variant: name,
-    chat_completions_endpoint: endpoint,
-    api_schema: apiSchema,
-    platform,
-    max_generated_tokens: maxGeneratedTokens,
-    context_size: contextSize,
-    supports_images: false,
-    reasoning_effort_values: [],
-  };
-}
-
-function parseEmbedding(value: unknown): PlatformEmbeddingModel | null {
-  if (!isRecord(value)) {
-    return null;
-  }
-
-  const url = requiredString(value, "url");
-  const name = requiredString(value, "name");
-  const vectorSize = requiredInteger(value, "vector-size");
-  const platform = requiredString(value, "platform");
-
-  if (!url || !name || !vectorSize || !platform) {
-    return null;
-  }
-
-  return {
-    kind: "embedding",
-    url,
-    name,
-    vector_size: vectorSize,
-    platform,
-    api_schema: "open_ai",
-  };
-}
-
+/** The server owns discovery and normalization; the panel validates registration-ready settings. */
 export function parsePlatformModels(value: unknown): PlatformModelsResponse {
-  if (!isRecord(value)) {
-    return { models: [], error: "AI Platform model catalog is not a JSON object." };
+  if (!isRecord(value) || !Array.isArray(value.models) || !Array.isArray(value.warnings)) {
+    return { models: [], error: "Backend returned invalid AI Platform model data.", status: 502 };
   }
 
-  const generative = Array.isArray(value.generative) ? value.generative : [];
-  const embedding = Array.isArray(value.embedding) ? value.embedding : [];
-  const parsedGenerative = generative.map(parseGenerative).filter((model) => model !== null);
-  const parsedEmbedding = embedding.map(parseEmbedding).filter((model) => model !== null);
-  const invalidCount =
-    generative.length + embedding.length - parsedGenerative.length - parsedEmbedding.length;
-
+  const models: PlatformModel[] = [];
+  const errors: string[] = [];
+  for (const warning of value.warnings) {
+    if (!isRecord(warning) || typeof warning.source !== "string" || typeof warning.message !== "string") {
+      return { models: [], error: "Backend returned invalid AI Platform warning data.", status: 502 };
+    }
+    errors.push(`${warning.source}: ${warning.message}`);
+  }
+  let invalidCount = 0;
+  for (const candidate of value.models) {
+    const mutation = isRecord(candidate)
+      ? parseModelMutation({ kind: candidate.kind, model: candidate })
+      : null;
+    if (!mutation) {
+      invalidCount += 1;
+      continue;
+    }
+    models.push({ ...mutation.model, kind: mutation.kind } as PlatformModel);
+  }
+  if (invalidCount) {
+    errors.push(`${invalidCount} invalid AI Platform model ${invalidCount === 1 ? "entry was" : "entries were"} ignored.`);
+  }
+  // A repeated served name is ambiguous; never let list order decide which endpoint gets added.
+  const counts = new Map<string, number>();
+  for (const model of models) {
+    const key = `${model.kind}:${model.name}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  for (const [key, count] of counts) {
+    if (count > 1) errors.push(`Conflicting AI Platform model ${key} was ignored.`);
+  }
   return {
-    models: [...parsedGenerative, ...parsedEmbedding],
-    ...(invalidCount > 0
-      ? { error: `${invalidCount} invalid AI Platform model ${invalidCount === 1 ? "entry was" : "entries were"} ignored.` }
-      : {}),
+    models: models.filter((model) => counts.get(`${model.kind}:${model.name}`) === 1),
+    ...(errors.length ? { error: errors.join(" ") } : {}),
   };
 }
 
-export async function getPlatformModels(
-  path = process.env.VLLM_CONFIG_PATH ?? DEFAULT_VLLM_CONFIG_PATH,
-): Promise<PlatformModelsResponse> {
-  try {
-    const contents = await readFile(path, "utf8");
-    return parsePlatformModels(JSON.parse(contents));
-  } catch (error) {
-    const detail = error instanceof SyntaxError ? "contains invalid JSON" : "is not available";
-    console.error(`[platform-models] ${path} ${detail}.`);
+export async function getPlatformModels(authToken: string): Promise<PlatformModelsResponse> {
+  const result = await requestBackendJson({ path: "/v1/platform-models", authToken });
+  if (!result.ok) {
     return {
       models: [],
-      error: `AI Platform model catalog ${detail}. Custom models can still be added.`,
+      error: `${result.status === 503 ? "AI Platform discovery is unavailable." : result.error} Custom models can still be added.`,
+      status: result.status ?? 502,
     };
   }
+  return parsePlatformModels(result.data);
 }

@@ -5,5 +5,6 @@ import { requireAdminToken } from "../_utils";
 export async function GET() {
   const auth = await requireAdminToken();
   if (!auth.ok) return auth.response;
-  return NextResponse.json(await getPlatformModels());
+  const result = await getPlatformModels(auth.authToken);
+  return NextResponse.json(result, { status: result.status ?? 200 });
 }

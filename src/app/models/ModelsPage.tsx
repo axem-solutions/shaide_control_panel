@@ -71,12 +71,14 @@ function PlatformModelPanel({
   onSelected,
   onAdd,
   busy,
+  onRefresh,
 }: {
   models: PlatformModel[];
   selectedKey: string;
   onSelected: (value: string) => void;
   onAdd: () => void;
   busy: boolean;
+  onRefresh: () => void;
 }) {
   const selected = models.find((model) => platformKey(model) === selectedKey);
 
@@ -89,6 +91,7 @@ function PlatformModelPanel({
             Select a model deployed by this installation.
           </Typography>
         </Box>
+        <Button onClick={onRefresh} disabled={busy}>Refresh available models</Button>
         {models.length ? (
           <>
             <TextField
@@ -190,11 +193,14 @@ function InstalledModelsTable({
 
 export default function ModelsPage({
   initialInstalledModels,
-  platformModels,
+  platformModels: initialPlatformModels,
   initialError,
-  catalogError,
+  catalogError: initialCatalogError,
 }: Props) {
   const [installed, setInstalled] = useState(initialInstalledModels);
+  const [platformModels, setPlatformModels] = useState(initialPlatformModels);
+  const [catalogError, setCatalogError] = useState(initialCatalogError);
+  const [refreshingPlatform, setRefreshingPlatform] = useState(false);
   const [selectedKey, setSelectedKey] = useState("");
   const [error, setError] = useState(initialError);
   const [addingPlatform, setAddingPlatform] = useState(false);
@@ -211,6 +217,25 @@ export default function ModelsPage({
   const refresh = async () => {
     const payload = await modelRequest("GET");
     if (payload.models) setInstalled(payload.models);
+  };
+
+  const refreshPlatform = async () => {
+    setRefreshingPlatform(true);
+    setSelectedKey("");
+    try {
+      const response = await fetch(`${API_ROUTE_BASE}/platform-models`, { cache: "no-store" });
+      const payload = await response.json() as { models?: PlatformModel[]; error?: string };
+      if (!response.ok || !Array.isArray(payload.models)) {
+        throw new Error(payload.error || "Unable to refresh AI Platform models.");
+      }
+      setPlatformModels(payload.models);
+      setCatalogError(payload.error);
+    } catch (cause) {
+      setPlatformModels([]);
+      setCatalogError(cause instanceof Error ? cause.message : "Unable to refresh AI Platform models.");
+    } finally {
+      setRefreshingPlatform(false);
+    }
   };
 
   const add = async (mutation: ModelMutation, custom: boolean) => {
@@ -268,13 +293,14 @@ export default function ModelsPage({
       />
       <Box sx={{ display: "grid", gap: 3 }}>
         {error && <Alert severity="error">{error}</Alert>}
-        {catalogError && <Alert severity="warning">{catalogError}</Alert>}
+        {catalogError && <Alert severity="error">{catalogError}</Alert>}
         <PlatformModelPanel
           models={availableModels}
           selectedKey={selectedKey}
           onSelected={setSelectedKey}
           onAdd={addSelected}
-          busy={addingPlatform}
+          busy={addingPlatform || refreshingPlatform}
+          onRefresh={() => void refreshPlatform()}
         />
         <Box>
           <Typography variant="h4" component="h2" sx={{ marginBottom: 2 }}>Installed models</Typography>
