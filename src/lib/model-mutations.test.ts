@@ -20,10 +20,31 @@ describe("model mutation validation", () => {
   });
 
   it.each([
+    {},
+    { chat_completions_endpoint: "http://model/chat" },
+    { completions_endpoint: "http://model/completions" },
+    { responses_endpoint: "http://model/responses" },
+    { chat_completions_endpoint: null, completions_endpoint: " ", responses_endpoint: "" },
+  ])("accepts optional endpoints with the server's string representation for blank chat", (endpoints) => {
+    const model = { ...completeModel, chat_completions_endpoint: undefined, completions_endpoint: undefined, responses_endpoint: undefined };
+    const result = parseModelMutation({ kind: "generative", model: { ...model, ...endpoints } });
+    expect(result).toMatchObject({ kind: "generative", model: {
+      chat_completions_endpoint: endpoints.chat_completions_endpoint || "",
+      completions_endpoint: endpoints.completions_endpoint?.trim() || null,
+      responses_endpoint: endpoints.responses_endpoint || null,
+    } });
+  });
+
+  it.each([undefined, "", "  "])("rejects a missing or blank variant: %s", (variant) => {
+    expect(parseModelMutation({ kind: "generative", model: { ...completeModel, variant } })).toBeNull();
+  });
+
+  it.each([
     ["daily_input_token_limit", -1], ["daily_output_token_limit", 1.5],
     ["max_images_per_request", 0], ["max_image_bytes", "1024"],
     ["max_image_width_px", Number.MAX_SAFE_INTEGER + 1], ["max_image_height_px", -1],
     ["native_fim_mode", "unknown"], ["fim_prompt_template", 123],
+    ["chat_completions_endpoint", 123],
     ["supports_images", "true"], ["reasoning_effort_values", ["low", "low"]],
     ["reasoning_effort_values", ["unsupported"]], ["reasoning_effort_values", "low"],
   ])("rejects invalid %s instead of silently dropping it", (field, value) => {

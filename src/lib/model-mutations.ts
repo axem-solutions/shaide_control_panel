@@ -7,7 +7,7 @@ const stringValue = (value: unknown) => typeof value === "string" && value.trim(
 const positiveInteger = (value: unknown) => typeof value === "number" && Number.isSafeInteger(value) && value > 0 ? value : null;
 function optionalString(value: unknown): string | null | undefined {
   if (value === undefined || value === null || value === "") return null;
-  return typeof value === "string" ? value.trim() : undefined;
+  return typeof value === "string" ? value.trim() || null : undefined;
 }
 
 function optionalInteger(value: unknown, minimum: number): number | null | undefined {
@@ -19,11 +19,11 @@ function parseGenerative(value: unknown): GenerativeModelInput | null {
   if (!isRecord(value)) return null;
   const name = stringValue(value.name);
   const variant = stringValue(value.variant);
-  const endpoint = stringValue(value.chat_completions_endpoint);
+  const endpoint = optionalString(value.chat_completions_endpoint);
   const apiSchema = stringValue(value.api_schema);
   const maxGeneratedTokens = positiveInteger(value.max_generated_tokens);
   const contextSize = positiveInteger(value.context_size);
-  if (!name || !variant || !endpoint || !apiSchema || !maxGeneratedTokens || !contextSize) return null;
+  if (!name || !variant || endpoint === undefined || !apiSchema || !maxGeneratedTokens || !contextSize) return null;
 
   const completionsEndpoint = optionalString(value.completions_endpoint);
   const responsesEndpoint = optionalString(value.responses_endpoint);
@@ -53,7 +53,8 @@ function parseGenerative(value: unknown): GenerativeModelInput | null {
   return {
     name,
     variant,
-    chat_completions_endpoint: endpoint,
+    // The server accepts an empty endpoint but its request field is a String, not Option<String>.
+    chat_completions_endpoint: endpoint ?? "",
     completions_endpoint: completionsEndpoint,
     responses_endpoint: responsesEndpoint,
     api_schema: apiSchema,

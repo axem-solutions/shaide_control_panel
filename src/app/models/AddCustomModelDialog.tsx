@@ -11,6 +11,7 @@ import {
 import { parseModelMutation } from "@/lib/model-mutations";
 import { NATIVE_FIM_MODES, REASONING_EFFORT_VALUES, type ModelKind, type ModelMutation } from "@/lib/model-types";
 import Panel from "../components/server/ui/Panel";
+import MonoLabel from "../components/server/ui/MonoLabel";
 
 const INITIAL_VALUES = {
   name: "",
@@ -37,6 +38,7 @@ type Field = keyof typeof INITIAL_VALUES;
 const GRID = { display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2 };
 const FULL_WIDTH = { gridColumn: "1 / -1" };
 const numberValue = (value: string) => value.trim() === "" ? null : Number(value);
+const REASONING_OPTIONS = REASONING_EFFORT_VALUES.filter((value) => value !== "none");
 
 export default function AddCustomModelDialog({ busy, error, onClose, onSubmit }: {
   busy: boolean;
@@ -53,6 +55,7 @@ export default function AddCustomModelDialog({ busy, error, onClose, onSubmit }:
   const reasoningLabelId = useId();
   const reasoningHelpId = useId();
   const titleId = useId();
+  const endpointsId = useId();
   const set = (field: Field) => (event: React.ChangeEvent<HTMLInputElement>) => {
     setValues((current) => ({ ...current, [field]: event.target.value }));
   };
@@ -67,7 +70,7 @@ export default function AddCustomModelDialog({ busy, error, onClose, onSubmit }:
     kind,
     model: kind === "generative" ? {
       ...common,
-      variant: values.variant.trim() || values.name,
+      variant: values.variant,
       chat_completions_endpoint: values.endpoint,
       completions_endpoint: values.completions_endpoint || null,
       responses_endpoint: values.responses_endpoint || null,
@@ -76,10 +79,10 @@ export default function AddCustomModelDialog({ busy, error, onClose, onSubmit }:
       daily_output_token_limit: numberValue(values.daily_output_token_limit),
       supports_images: supportsImages,
       reasoning_effort_values: reasoningEfforts,
-      max_images_per_request: numberValue(values.max_images_per_request),
-      max_image_bytes: numberValue(values.max_image_bytes),
-      max_image_width_px: numberValue(values.max_image_width_px),
-      max_image_height_px: numberValue(values.max_image_height_px),
+      max_images_per_request: supportsImages ? numberValue(values.max_images_per_request) : null,
+      max_image_bytes: supportsImages ? numberValue(values.max_image_bytes) : null,
+      max_image_width_px: supportsImages ? numberValue(values.max_image_width_px) : null,
+      max_image_height_px: supportsImages ? numberValue(values.max_image_height_px) : null,
       native_fim_mode: values.native_fim_mode || null,
       fim_prompt_template: values.fim_prompt_template || null,
     } : {
@@ -114,11 +117,11 @@ export default function AddCustomModelDialog({ busy, error, onClose, onSubmit }:
           </RadioGroup>
           <Box sx={GRID}>
             <TextField required label="Name" value={values.name} onChange={set("name")} disabled={busy} />
-            {kind === "generative" && <TextField label="Variant" placeholder="Defaults to name" value={values.variant} onChange={set("variant")} disabled={busy} />}
-            <TextField
-              required label={kind === "generative" ? "Chat completions endpoint" : "Embeddings endpoint"}
+            {kind === "generative" && <TextField required label="Variant" value={values.variant} onChange={set("variant")} disabled={busy} />}
+            {kind === "embedding" && <TextField
+              required label="Embeddings endpoint"
               value={values.endpoint} onChange={set("endpoint")} sx={FULL_WIDTH} disabled={busy}
-            />
+            />}
             <TextField select required label="API schema" value={values.api_schema} onChange={set("api_schema")} disabled={busy}>
               <MenuItem value="open_ai">open_ai</MenuItem>
             </TextField>
@@ -133,6 +136,14 @@ export default function AddCustomModelDialog({ busy, error, onClose, onSubmit }:
               {numericField("context_size", "Context size", true)}
             </> : numericField("vector_size", "Vector size", true)}
           </Box>
+          {kind === "generative" && <Panel padding={24}>
+            <Box role="group" aria-labelledby={endpointsId} sx={{ display: "grid", gap: 2 }}>
+              <Box id={endpointsId}><MonoLabel>Endpoints</MonoLabel></Box>
+              <TextField label="Chat completions endpoint" value={values.endpoint} onChange={set("endpoint")} disabled={busy} />
+              <TextField label="Completions endpoint" value={values.completions_endpoint} onChange={set("completions_endpoint")} disabled={busy} />
+              <TextField label="Responses endpoint" value={values.responses_endpoint} onChange={set("responses_endpoint")} disabled={busy} />
+            </Box>
+          </Panel>}
           <Box>
             <Button aria-expanded={advanced} aria-controls={advancedId} onClick={() => setAdvanced(!advanced)}
               endIcon={advanced ? <ExpandLessIcon /> : <ExpandMoreIcon />}>
@@ -144,32 +155,32 @@ export default function AddCustomModelDialog({ busy, error, onClose, onSubmit }:
                   {numericField("daily_input_token_limit", "Daily input token limit", false, 0)}
                   {kind === "generative" && <>
                     {numericField("daily_output_token_limit", "Daily output token limit", false, 0)}
-                    <TextField label="Completions endpoint" value={values.completions_endpoint} onChange={set("completions_endpoint")} disabled={busy} sx={FULL_WIDTH} />
-                    <TextField label="Responses endpoint" value={values.responses_endpoint} onChange={set("responses_endpoint")} disabled={busy} sx={FULL_WIDTH} />
                     <FormControl fullWidth disabled={busy} sx={FULL_WIDTH}>
-                      <InputLabel id={reasoningLabelId}>Reasoning effort</InputLabel>
-                      <Select<string[]> multiple labelId={reasoningLabelId} label="Reasoning effort" value={reasoningEfforts}
+                      <InputLabel id={reasoningLabelId} shrink>Reasoning effort</InputLabel>
+                      <Select<string[]> multiple displayEmpty labelId={reasoningLabelId} label="Reasoning effort" value={reasoningEfforts}
                         inputProps={{ "aria-describedby": reasoningHelpId }}
                         onChange={(event) => {
                           const selected = typeof event.target.value === "string" ? event.target.value.split(",") : event.target.value;
-                          setReasoningEfforts(REASONING_EFFORT_VALUES.filter((value) => selected.includes(value)));
+                          setReasoningEfforts(REASONING_OPTIONS.filter((value) => selected.includes(value)));
                         }}
-                        renderValue={(selected) => selected.join(", ")}>
-                        {REASONING_EFFORT_VALUES.map((value) => (
+                        renderValue={(selected) => selected.length ? selected.join(", ") : "None"}>
+                        {REASONING_OPTIONS.map((value) => (
                           <MenuItem key={value} value={value}>
                             <Checkbox checked={reasoningEfforts.includes(value)} tabIndex={-1} disableRipple />
                             <ListItemText primary={value} />
                           </MenuItem>
                         ))}
                       </Select>
-                      <FormHelperText id={reasoningHelpId}>Select all supported values. Leave empty if reasoning effort is unsupported.</FormHelperText>
+                      <FormHelperText id={reasoningHelpId}>Select all supported values. Leave empty for none.</FormHelperText>
                     </FormControl>
                     <FormControlLabel control={<Checkbox checked={supportsImages} onChange={(event) => setSupportsImages(event.target.checked)} />}
                       label="Supports images" disabled={busy} sx={FULL_WIDTH} />
-                    {numericField("max_images_per_request", "Max images per request")}
-                    {numericField("max_image_bytes", "Max image size (bytes)")}
-                    {numericField("max_image_width_px", "Max image width (px)")}
-                    {numericField("max_image_height_px", "Max image height (px)")}
+                    {supportsImages && <>
+                      {numericField("max_images_per_request", "Max images per request")}
+                      {numericField("max_image_bytes", "Max image size (bytes)")}
+                      {numericField("max_image_width_px", "Max image width (px)")}
+                      {numericField("max_image_height_px", "Max image height (px)")}
+                    </>}
                     <TextField select label="Native FIM mode" value={values.native_fim_mode} onChange={set("native_fim_mode")} disabled={busy}
                       sx={FULL_WIDTH} slotProps={{ inputLabel: { shrink: true }, select: { displayEmpty: true } }}>
                       <MenuItem value="">Not configured</MenuItem>
